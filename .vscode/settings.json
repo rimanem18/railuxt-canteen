@@ -6,7 +6,8 @@
   // eslint の自動修正を保存時に実行
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit",
-    "source.fixAll.eslint": "explicit"
+    "source.fixAll.eslint": "explicit",
+    "source.fixAll.rubocop": "explicit"
   },
 
   // ESLint をフロントエンドディレクトリで動かす設定
@@ -23,5 +24,11 @@
   },
   "[vue]": {
     "editor.defaultFormatter":  "esbenp.prettier-vscode"
-  }
+  },
+
+  // Ruby ファイルは RuboCop をフォーマッタに使う
+  "[ruby]": {
+    "editor.defaultFormatter": "misogi.ruby-rubocop"
+  },
+
 }

@@ -1,3 +1,5 @@
+inherit_from: .rubocop_todo.yml
+
 require:
   - rubocop-performance
   - rubocop-rails
@@ -58,3 +60,6 @@ Metrics/BlockLength:
 # Rails モデルのスコープ警告を一部許可
 Rails/SkipsModelValidations:
   Enabled: false
+
+inherit_from:
+  - .rubocop_todo.yml

@@ -1,0 +1,60 @@
+require:
+  - rubocop-performance
+  - rubocop-rails
+  - rubocop-rake
+  # - rubocop-rspec             # テストに合わせて必要なら有効化
+  # - rubocop-factory_bot       # FactoryBot を使うなら
+
+# 全体設定
+AllCops:
+  TargetRubyVersion: 3.2 #
+  NewCops: enable
+  Exclude:
+    - "db/schema.rb"
+    - "bin/**/*"
+    - "node_modules/**/*"
+    - "tmp/**/*"
+    - "vendor/**/*"
+
+inherit_mode:
+  merge:
+    - Exclude
+
+# Rails 特有のコップ群を有効化
+Rails:
+  Enabled: true
+
+# Layout／Formatting
+Layout/LineLength:
+  Max: 120 # 1行あたりの最大文字数
+
+# クラス／メソッドの長さ制限
+Metrics/ClassLength:
+  Max: 120
+  CountAsOne:
+    - array
+    - hash
+    - heredoc
+    - method_call
+
+# 自動修正が危険なルールはオフに
+Style/NumericPredicate:
+  Enabled: false
+Style/SymbolArray:
+  Enabled: false
+Style/WordArray:
+  Enabled: false
+
+# コメントドキュメントの警告は無効化
+Style/Documentation:
+  Enabled: false
+
+# テストファイルなど長くなりがちな箇所の調整
+Metrics/BlockLength:
+  Exclude:
+    - "spec/**/*"
+    - "test/**/*"
+
+# Rails モデルのスコープ警告を一部許可
+Rails/SkipsModelValidations:
+  Enabled: false

@@ -19,3 +19,4 @@ logs:
 	docker compose logs -f
 fmt:
 	docker compose exec app bash -c "bundle exec rubocop -a"
+	docker compose exec web bash -c "npm run format"

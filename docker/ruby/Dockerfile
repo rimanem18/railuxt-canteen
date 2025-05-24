@@ -22,4 +22,3 @@ COPY ./backend/Gemfile /app/Gemfile
 COPY ./backend/Gemfile.lock /app/Gemfile.lock
 RUN bundle install --gemfile /app/Gemfile
 
-CMD ["bash", "rm -f tmp/pids/server.pid && bin/rails server -b 0.0.0.0 -p 3000"]

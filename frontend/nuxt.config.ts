@@ -8,6 +8,7 @@ export default defineNuxtConfig({
     },
   },
 
+  ssr: false,
   vite: {
     server: {
       proxy: {
@@ -19,8 +20,9 @@ export default defineNuxtConfig({
       },
     },
   },
+
   // モジュール一覧
-  modules: ["@nuxt/eslint", "@nuxt/icon", "@nuxt/image"],
+  modules: ["@nuxt/eslint", "@nuxt/icon", "@nuxt/image", "@nuxtjs/tailwindcss"],
 
   // ESLint の設定
   eslint: {

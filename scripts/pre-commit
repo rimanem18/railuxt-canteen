@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -eu
+
+cd "$(git rev-parse --show-toplevel)"
+echo "→ [pre-commit] Formatting and linting staged files…"
+
+# ステージされたファイル一覧
+mapfile -t staged_ruby < <(
+  git diff --cached --name-only --diff-filter=ACM | grep '\.rb$' || true
+)
+mapfile -t staged_js < <(
+  git diff --cached --name-only --diff-filter=ACM | grep -E '\.(js|ts|vue)$' || true
+)
+
+# Backend: RuboCop
+if [ "${#staged_ruby[@]}" -gt 0 ]; then
+  echo "→ [pre-commit] RuboCop on Ruby files…"
+  for host_path in "${staged_ruby[@]}"; do
+    rel="${host_path#backend/}"
+    docker compose exec -T app rubocop -A "/app/${rel}"
+    git add "$host_path"
+  done
+fi
+
+# Frontend: ESLint
+if [ "${#staged_js[@]}" -gt 0 ]; then
+  echo "→ [pre-commit] ESLint on JS/TS/Vue files…"
+  for host_path in "${staged_js[@]}"; do
+    rel="${host_path#frontend/}"
+    docker compose exec -T web npx eslint --fix "/home/node/app/${rel}"
+    git add "$host_path"
+  done
+fi
+
+echo "→ [pre-commit] All done."

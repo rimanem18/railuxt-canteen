@@ -1,0 +1,37 @@
+{
+  // 保存時のフォーマット
+  "editor.formatOnSave": true,
+  "eslint.format.enable": true,
+
+  // eslint の自動修正を保存時に実行
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.fixAll.eslint": "explicit",
+  },
+
+  // ESLint をフロントエンドディレクトリで動かす設定
+  "eslint.workingDirectories": [
+    { "directory": "./frontend", "changeProcessCWD": true }
+  ],
+
+  // フォーマッター指定（必要に応じて）
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter":  "esbenp.prettier-vscode"
+  },
+  "[vue]": {
+    "editor.defaultFormatter":  "esbenp.prettier-vscode"
+  },
+
+  // Ruby ファイルを保存したときだけ走らせる
+  "emeraldwalk.runonsave": {
+    "commands": [
+      {
+        "match": "\\.rb$",
+        "cmd": "docker compose exec -T app rubocop -A /app/${relativeFile#backend/}"
+      }
+    ]
+  }
+}

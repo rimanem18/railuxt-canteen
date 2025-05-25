@@ -1,0 +1,64 @@
+# backend/.rubocop.yml
+
+inherit_from:
+  - .rubocop_todo.yml
+
+plugins:
+  - rubocop-performance
+  - rubocop-rails
+  - rubocop-rake
+
+# ─── 全体設定 ───
+AllCops:
+  TargetRubyVersion: 3.2
+  NewCops: enable
+  Exclude:
+    - "db/schema.rb"
+    - "bin/**/*"
+    - "node_modules/**/*"
+    - "tmp/**/*"
+    - "vendor/**/*"
+
+# ─── マージモードで Exclude を結合 ───
+inherit_mode:
+  merge:
+    - Exclude
+
+# ─── Rails 向け拡張を有効化 ───
+Rails:
+  Enabled: true
+
+# ─── レイアウト／フォーマット ───
+Layout/LineLength:
+  Max: 120
+
+# ─── クラス／メソッドの長さ制限 ───
+Metrics/ClassLength:
+  Max: 120
+  CountAsOne:
+    - array
+    - hash
+    - heredoc
+    - method_call
+
+# ─── 自動修正が危険なルールはオフ ───
+Style/NumericPredicate:
+  Enabled: false
+Style/SymbolArray:
+  Enabled: false
+Style/WordArray:
+  Enabled: false
+
+# ─── ドキュメントコメントは無効化 ───
+Style/Documentation:
+  Enabled: false
+
+# ─── テストファイルの長いブロックを許容 ───
+Metrics/BlockLength:
+  Exclude:
+    - "spec/**/*"
+    - "test/**/*"
+
+# ─── モデルバリデーションスキップ警告を一部許可 ───
+Rails/SkipsModelValidations:
+  Enabled: false

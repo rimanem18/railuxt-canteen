@@ -29,7 +29,7 @@ init:
 	docker compose run --rm web bash -lc "npm ci"
 
 	# DB セットアップ
-	docker compose run --rm app bash -lc "rails db:setup"
+	docker compose run --rm app bash -lc "bundle exec rails db:setup"
 
 	# pre-commit フックを初回セットアップ
 	test -f .git/hooks/pre-commit || cp scripts/pre-commit .git/hooks/pre-commit

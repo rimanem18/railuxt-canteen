@@ -28,11 +28,12 @@ init:
 	docker compose run --rm app bash -lc "bundle check || bundle install"
 	docker compose run --rm web bash -lc "npm ci"
 
-	# DB セットアップ
-	docker compose run --rm app bash -lc "bundle exec rails db:setup"
-
 	# pre-commit フックを初回セットアップ
 	test -f .git/hooks/pre-commit || cp scripts/pre-commit .git/hooks/pre-commit
 	chmod +x .git/hooks/pre-commit
 
-	@echo "init complete. 次は make up で起動してください"
+	@echo "✨ init complete. 次は make up で起動してください"
+db-setup:
+	docker compose up -d
+	docker compose exec -T app bash -lc "bundle exec rails db:prepare"
+	@echo "✨ DB setup complete"

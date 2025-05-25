@@ -1,32 +1,35 @@
 #!/usr/bin/env bash
-set -e
+set -eu
 
-echo "→ Running format & lint on staged files via Docker Compose..."
+cd "$(git rev-parse --show-toplevel)"
+echo "→ [pre-commit] Formatting and linting staged files…"
 
-# ステージされた Ruby ファイル一覧
-staged_ruby=$(git diff --cached --name-only --diff-filter=ACM | grep '\.rb$' || true)
+# ステージされたファイル一覧
+mapfile -t staged_ruby < <(
+  git diff --cached --name-only --diff-filter=ACM | grep '\.rb$' || true
+)
+mapfile -t staged_js < <(
+  git diff --cached --name-only --diff-filter=ACM | grep -E '\.(js|ts|vue)$' || true
+)
 
-if [ -n "$staged_ruby" ]; then
-  echo "Formatting Ruby files in app container..."
-  for file in $staged_ruby; do
-    # app コンテナ内で RuboCop auto-correct を実行
-    docker compose exec app bash -c "bundle exec rubocop -a \"$file\""
-    # 変更があれば再ステージ
-    git add "$file"
+# Backend: RuboCop
+if [ "${#staged_ruby[@]}" -gt 0 ]; then
+  echo "→ [pre-commit] RuboCop on Ruby files…"
+  for host_path in "${staged_ruby[@]}"; do
+    rel="${host_path#backend/}"
+    docker compose exec -T app rubocop -A "/app/${rel}"
+    git add "$host_path"
   done
 fi
 
-# ステージされた JS/TS/Vue ファイル一覧
-staged_fe=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(js|ts|vue)$' || true)
-
-if [ -n "$staged_fe" ]; then
-  echo "Formatting frontend files in web container..."
-  for file in $staged_fe; do
-    # web コンテナ内で ESLint auto-fix を実行
-    docker compose exec web bash -c "npx eslint --fix \"$file\""
-    # 変更があれば再ステージ
-    git add "$file"
+# Frontend: ESLint
+if [ "${#staged_js[@]}" -gt 0 ]; then
+  echo "→ [pre-commit] ESLint on JS/TS/Vue files…"
+  for host_path in "${staged_js[@]}"; do
+    rel="${host_path#frontend/}"
+    docker compose exec -T web npx eslint --fix "/home/node/app/${rel}"
+    git add "$host_path"
   done
 fi
 
-echo "→ format & lint completed."
+echo "→ [pre-commit] All done."

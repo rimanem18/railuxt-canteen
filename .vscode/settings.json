@@ -7,7 +7,6 @@
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit",
     "source.fixAll.eslint": "explicit",
-    "source.fixAll.rubocop": "explicit"
   },
 
   // ESLint をフロントエンドディレクトリで動かす設定
@@ -26,9 +25,13 @@
     "editor.defaultFormatter":  "esbenp.prettier-vscode"
   },
 
-  // Ruby ファイルは RuboCop をフォーマッタに使う
-  "[ruby]": {
-    "editor.defaultFormatter": "misogi.ruby-rubocop"
-  },
-
+  // Ruby ファイルを保存したときだけ走らせる
+  "emeraldwalk.runonsave": {
+    "commands": [
+      {
+        "match": "\\.rb$",
+        "cmd": "docker compose exec -T app rubocop -A /app/${relativeFile#backend/}"
+      }
+    ]
+  }
 }

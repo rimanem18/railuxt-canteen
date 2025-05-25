@@ -1,6 +1,8 @@
 Rails.application.routes.draw do
+  namespace :api do
+    namespace :v1 do
+      get 'health/show'
+    end
+  end
   get '/name', to: ->(_env) { [200, { 'Content-Type' => 'application/json' }, [{ name: '太郎' }.to_json]] }
-
-  # 単純に JSON {"status":"OK"} を返すヘルスチェック
-  get '/health', to: ->(_env) { [200, { 'Content-Type' => 'application/json' }, [{ status: 'OK' }.to_json]] }
 end

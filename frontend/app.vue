@@ -1,10 +1,15 @@
 <script setup lang="ts">
-type Data = {
+type Health = {
+  status: string;
   name: string;
 };
 
-const { data, pending, error } = await useFetch<Data | null>("/api/name");
+const {
+  data: health,
+  pending: healthPending,
+  error: healthError,
+} = await useFetch<Health | null>("/api/v1/health/show");
 </script>
 <template>
-  <HelloWorld :name="data?.name || ''" />
+  <HelloWorld :name="health?.name || ''" />
 </template>

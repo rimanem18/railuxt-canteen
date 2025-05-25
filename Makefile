@@ -20,3 +20,19 @@ logs:
 fmt:
 	docker compose exec app bash -c "bundle exec rubocop -a"
 	docker compose exec web bash -c "npm run format"
+init:
+	# 環境変数コピー
+	test -f .env || cp .env.example .env
+
+	# Gem や npm 依存インストール
+	docker compose run --rm app bash -lc "bundle check || bundle install"
+	docker compose run --rm web bash -lc "npm ci"
+
+	# DB セットアップ
+	docker compose run --rm app bash -lc "rails db:setup"
+
+	# pre-commit フックを初回セットアップ
+	test -f .git/hooks/pre-commit || cp scripts/pre-commit .git/hooks/pre-commit
+	chmod +x .git/hooks/pre-commit
+
+	@echo "init complete. 次は make up で起動してください"

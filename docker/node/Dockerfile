@@ -1,6 +1,6 @@
 FROM node:22.15
 
-WORKDIR /app
+WORKDIR /home/node/app
 
 COPY ./frontend/package*.json ./
 RUN npm install
@@ -8,3 +8,5 @@ RUN npm install
 COPY ./frontend .
 
 EXPOSE 3000
+
+USER node

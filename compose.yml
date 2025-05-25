@@ -22,7 +22,7 @@ services:
       context: .
       dockerfile: docker/node/Dockerfile
     volumes:
-      - ./frontend:/app
+      - ./frontend:/home/node/app
     ports:
       - "3000:3000"
     environment:

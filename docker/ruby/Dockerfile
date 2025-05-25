@@ -2,14 +2,22 @@ FROM ruby:3.2.8
 
 # OSパッケージをまとめてインストール
 RUN apt-get update -qq && \
-    apt-get install -y --no-install-recommends \
-      build-essential \
-      libpq-dev \
-      sqlite3 libsqlite3-dev \
-      nodejs \
-      yarn
+  apt-get install -y --no-install-recommends \
+  build-essential \
+  libpq-dev \
+  sqlite3 libsqlite3-dev \
+  nodejs \
+  yarn
+
+# ホストと同じ UID/GID のユーザーを作成
+ARG UID=1000
+ARG GID=1000
+RUN groupadd -g ${GID} codergroup \
+  && useradd -m -u ${UID} -g codergroup coder
 
 WORKDIR /app
+# 以降は coder 権限で動く
+USER coder
 
 # Rails 7.0 系の最新パッチをインストール
 RUN gem install rails -v '~> 7.0.0'

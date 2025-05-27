@@ -1,4 +1,4 @@
-# railuxt-board
+# railuxt-canteen
 
 ## 動作確認済み環境
 

@@ -6,7 +6,7 @@ class CreateOrders < ActiveRecord::Migration[7.0]
       t.references :user, null: false, foreign_key: true
       t.references :dish, null: false, foreign_key: true
       t.integer :quantity, default: 1, null: false
-      t.boolean :status, default: false, null: false
+      t.boolean :status, null: false, default: false
 
       t.timestamps
     end

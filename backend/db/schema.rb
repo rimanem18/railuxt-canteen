@@ -24,8 +24,8 @@ ActiveRecord::Schema[7.0].define(version: 2025_05_27_083743) do
   create_table "orders", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "dish_id", null: false
-    t.integer "quantity"
-    t.boolean "status"
+    t.integer "quantity", default: 1, null: false
+    t.boolean "status", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["dish_id"], name: "index_orders_on_dish_id"

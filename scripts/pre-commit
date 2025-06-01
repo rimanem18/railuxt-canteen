@@ -17,7 +17,8 @@ if [ "${#staged_ruby[@]}" -gt 0 ]; then
   echo "→ [pre-commit] RuboCop on Ruby files…"
   for host_path in "${staged_ruby[@]}"; do
     rel="${host_path#backend/}"
-    docker compose exec -T app rubocop -A "/app/${rel}"
+    # force-exclusion を追加
+    docker compose exec -T app rubocop --force-exclusion -A "/app/${rel}"
     git add "$host_path"
   done
 fi

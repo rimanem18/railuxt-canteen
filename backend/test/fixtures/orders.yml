@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  dish: one
+  quantity: 1
+  status: false
+
+two:
+  user: two
+  dish: two
+  quantity: 1
+  status: false

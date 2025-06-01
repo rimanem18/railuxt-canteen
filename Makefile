@@ -35,5 +35,6 @@ init:
 	@echo "✨ init complete. 次は make up で起動してください"
 db-setup:
 	docker compose up -d
-	docker compose exec -T app bash -lc "bundle exec rails db:prepare"
+	docker compose exec -T app bash -lc "bundle exec rails db:migrate"
+	docker compose exec -T app bash -lc "bundle exec rails db:seed"
 	@echo "✨ DB setup complete"

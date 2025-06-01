@@ -3,6 +3,9 @@
 module Api
   module V1
     class OrdersController < ApplicationController
+      # update を呼ぶ前に set_order が走って、@order をセットしてくれる
+      before_action :set_order, only: [:update]
+
       # 一覧表示アクション
       # GET /api/v1/orders
       def index

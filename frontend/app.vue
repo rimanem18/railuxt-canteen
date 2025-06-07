@@ -1,15 +1,19 @@
 <script setup lang="ts">
-type Health = {
-  status: string;
-  name: string;
-};
+import { useApi } from "@/composables/useApi";
 
-const {
-  data: health,
-  pending: healthPending,
-  error: healthError,
-} = await useFetch<Health | null>("/api/v1/health/show");
+const { data, error } = await useApi("/api/v1/health/show");
+
+// name をリアクティブな computed で取り出す
+const name = computed(() => {
+  if (error.value) {
+    console.log("data value:", data.value);
+    console.error("error value: ", error.value);
+    return "エラー";
+  }
+  console.log("data value:", data.value);
+  return data.value?.name ?? "";
+});
 </script>
 <template>
-  <HelloWorld :name="health?.name || ''" />
+  <HelloWorld :name="name || ''" />
 </template>

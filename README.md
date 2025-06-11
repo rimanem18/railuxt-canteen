@@ -21,6 +21,8 @@ pre-commit なども同様で、docker compose を経由し、ステージング
 
 コンテナ起動後、 http://localhost:3000 にアクセスすると、注文画面が表示されます。
 
+![image](https://github.com/user-attachments/assets/0e61109b-b2e7-404f-92e4-85e8ac8615fa)
+
 ### 初回
 
 ```sh
@@ -45,5 +47,9 @@ make down
 
 「注文する」を押下すると、アラートが表示されて注文できます。
 
+![image](https://github.com/user-attachments/assets/90271467-e41b-44db-8a1b-77fc9f2b8f83)
+
 http://localhost:3000/orders に遷移すると、発注済みの注文がリストで表示されます。
 「提供済みにする」を押下すると、提供済みフラグが立ちます。
+
+

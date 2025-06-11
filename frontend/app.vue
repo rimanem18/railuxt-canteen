@@ -15,5 +15,12 @@ const name = computed(() => {
 });
 </script>
 <template>
-  <HelloWorld :name="name || ''" />
+  <!-- 使いやすいように -->
+  <header>
+    <NuxtLink to="/">Home</NuxtLink>
+    <NuxtLink to="/orders">Orders</NuxtLink>
+  </header>
+
+  <!-- ここが「pages/」配下のページが差し込まれる -->
+  <NuxtPage />
 </template>

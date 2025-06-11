@@ -1,7 +1,7 @@
 up:
 	docker compose up -d
 down:
-	docker compose down --volumes --remove-orphans
+	docker compose down --remove-orphans
 restart:
 	docker compose down
 	docker compose up -d

@@ -1,5 +1,7 @@
 <template>
-  <div class="border p-4 rounded-lg shadow hover:shadow-md transition-shadow">
+  <div
+    class="border p-4 rounded-lg shadow hover:shadow-md transition-shadow min-w-64"
+  >
     <h2 class="font-bold text-lg">{{ dish.name }}</h2>
     <p class="mt-2 text-sm">¥{{ dish.price }}</p>
     <button

@@ -56,3 +56,7 @@ group :development, :test do
 end
 
 gem 'rack-cors', '~> 2.0'
+
+gem "devise", "~> 4.9"
+
+gem "devise_token_auth", "~> 1.2"

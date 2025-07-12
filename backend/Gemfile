@@ -60,3 +60,5 @@ gem 'rack-cors', '~> 2.0'
 gem 'devise', '~> 4.9'
 
 gem 'devise_token_auth', '~> 1.2'
+
+gem 'omniauth', '~> 2.1'

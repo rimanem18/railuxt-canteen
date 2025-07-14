@@ -12,6 +12,7 @@ users.each do |attrs|
     u.password_confirmation = attrs[:password]
     u.provider = 'email'
     u.uid = attrs[:email]
+    u.confirmed_at = Time.current # メール確認を完了済みにする
   end
 end
 

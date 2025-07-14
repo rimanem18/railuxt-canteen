@@ -4,3 +4,12 @@
     <NuxtPage />
   </div>
 </template>
+
+<script setup lang="ts">
+const { fetchUser } = useAuth();
+
+// アプリケーションの初期化時に認証状態を復元
+onMounted(async () => {
+  await fetchUser();
+});
+</script>

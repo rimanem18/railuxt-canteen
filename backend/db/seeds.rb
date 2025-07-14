@@ -2,8 +2,8 @@
 
 # ユーザー
 users = [
-  { name: 'ユーザー1', email: 'user1@example.com', password: 'password123' },
-  { name: 'ユーザー2', email: 'user2@example.com', password: 'password456' }
+  { name: 'ユーザー1', email: 'user1@example.com', password: 'railuxt01' },
+  { name: 'ユーザー2', email: 'user2@example.com', password: 'railuxt02' }
 ]
 users.each do |attrs|
   User.find_or_create_by!(email: attrs[:email]) do |u|

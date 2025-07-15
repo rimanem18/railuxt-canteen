@@ -3,7 +3,7 @@ import OrderList from "~/components/OrderList.vue";
 
 // 認証ミドルウェアを適用
 definePageMeta({
-  middleware: 'auth'
+  middleware: "auth",
 });
 
 const { data: orders } = await useApi("/api/v1/orders");

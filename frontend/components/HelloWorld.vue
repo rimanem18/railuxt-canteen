@@ -1,5 +1,9 @@
 <script setup lang="ts">
-const props = defineProps<{ name: string }>();
+/** グリーティングメッセージを表示するコンポーネント */
+const props = defineProps<{
+  /** 表示する名前 */
+  name: string;
+}>();
 </script>
 
 <template>

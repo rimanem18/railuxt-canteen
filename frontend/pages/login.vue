@@ -36,8 +36,12 @@ const password = ref("");
 const { login, errorMsg } = useAuth();
 const router = useRouter();
 
+/**
+ * ログイン処理を実行し、成功時にトップページへ遷移
+ */
 async function onLogin() {
   const ok = await login(email.value, password.value);
+  // ログイン成功時のみトップページへ遷移（エラー時はerrorMsgで表示）
   if (ok) router.push("/");
 }
 </script>

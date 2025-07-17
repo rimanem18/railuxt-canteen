@@ -1,11 +1,15 @@
+import type { UseApiOptions } from '~/types/useApi'
+
 /**
  * API呼び出しを行うコンポーザブル関数
- * @param {string} path - APIのパス（例: "/api/v1/dishes"）
- * @param {any} options - useFetchのオプション（method, body, headers等）
- * @param {any} options - useFetchのオプション（method, body, headers等）
- * @returns {{ data: Ref<T | null>, error: Ref<any>, refresh: () => Promise<void> }} APIレスポンス、エラー、リフレッシュ関数
+ * @param path - APIのパス（例: "/api/v1/dishes"）
+ * @param options - useFetchのオプション（method, body, headers等）
+ * @returns APIレスポンス、エラー、リフレッシュ関数
  */
-export const useApi = <T = unknown>(path: string, options: any = {}) => {
+export const useApi = <T = unknown>(
+  path: string,
+  options: UseApiOptions = {},
+) => {
   const base = useRuntimeConfig().public.apiBase
   const url = `${base}${path}`
 
@@ -20,8 +24,19 @@ export const useApi = <T = unknown>(path: string, options: any = {}) => {
   if (client.value) authHeaders['client'] = client.value
   if (uid.value) authHeaders['uid'] = uid.value
 
+  // HTTPメソッドを小文字に変換
+  const normalizedMethod = options.method?.toLowerCase() as
+    | 'get'
+    | 'post'
+    | 'put'
+    | 'patch'
+    | 'delete'
+    | undefined
+
   const { data, error, refresh } = useFetch<T>(url, {
-    ...options,
+    method: normalizedMethod,
+    body: options.body,
+    query: options.query,
     headers: {
       ...authHeaders,
       ...(options.headers || {}),

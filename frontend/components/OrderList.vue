@@ -22,18 +22,39 @@
 </template>
 
 <script setup lang="ts">
+/** 料理の型定義 */
 interface Dish {
+  /** 料理ID */
   id: number;
+  /** 料理名 */
   name: string;
+  /** 価格（円） */
   price: number;
 }
 
+/** 注文の型定義 */
 interface Order {
+  /** 注文ID */
   id: number;
+  /** 注文数量 */
   quantity: number;
+  /** 提供状況（true: 提供済み, false: 未提供） */
   status: boolean;
+  /** 注文された料理 */
   dish: Dish;
 }
 
-defineProps<{ orders: Order[] }>();
+/** 注文一覧を表示するコンポーネント */
+defineProps<{
+  /** 表示する注文のリスト */
+  orders: Order[];
+}>();
+
+/**
+ * 注文の提供完了イベント
+ * @param complete - 注文IDを受け取る
+ */
+defineEmits<{
+  complete: [orderId: number];
+}>();
 </script>

@@ -38,3 +38,5 @@ db-setup:
 	docker compose exec -T app bash -lc "bundle exec rails db:migrate"
 	docker compose exec -T app bash -lc "bundle exec rails db:seed"
 	@echo "✨ DB setup complete"
+amend:
+	git commit --amend --no-edit

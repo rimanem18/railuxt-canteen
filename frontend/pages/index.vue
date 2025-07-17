@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import DishCard from "~/components/DishCard.vue";
 const { data: dishes } = await useApi("/api/v1/dishes");
+/**
+ * 料理を注文する処理
+ * @param id - 注文する料理のID
+ */
 const onOrder = async (id: number) => {
+  // 注文数量は固定で1としている（将来的にはユーザーが数量を選択できるようにする可能性がある）
   await useApi("/api/v1/orders", {
     method: "POST",
     body: { order: { dish_id: id, quantity: 1 } },
   });
+  // 簡易的な成功通知（将来的にはトーストやモーダルなどのより良いUIに変更する）
   alert("注文しました");
 };
 </script>

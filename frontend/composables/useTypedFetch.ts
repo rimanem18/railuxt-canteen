@@ -36,7 +36,7 @@ export async function useTypedFetch<T>(
 
     // API呼び出し
     const response = await $fetch(fullUrl, {
-      method: options.method || 'GET',
+      method: options.method || 'get',
       body: options.body,
       headers: {
         'Content-Type': 'application/json',
@@ -195,7 +195,7 @@ export function useAuthTypedFetch() {
     ) {
       return useTypedFetch(url, schema, {
         ...options,
-        method: 'POST',
+        method: 'post',
         body,
       })
     },
@@ -210,7 +210,7 @@ export function useAuthTypedFetch() {
     ) {
       return useTypedFetch(url, schema, {
         ...options,
-        method: 'GET',
+        method: 'get',
       })
     },
 
@@ -225,7 +225,7 @@ export function useAuthTypedFetch() {
     ) {
       return useTypedFetch(url, schema, {
         ...options,
-        method: 'PUT',
+        method: 'put',
         body,
       })
     },
@@ -240,7 +240,7 @@ export function useAuthTypedFetch() {
     ) {
       return useTypedFetch(url, schema, {
         ...options,
-        method: 'DELETE',
+        method: 'delete',
       })
     },
   }

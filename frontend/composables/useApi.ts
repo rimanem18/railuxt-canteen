@@ -1,15 +1,11 @@
-import type { FetchOptions } from '~/types/api'
-
 /**
  * API呼び出しを行うコンポーザブル関数
  * @param {string} path - APIのパス（例: "/api/v1/dishes"）
- * @param {FetchOptions} options - useFetchのオプション（method, body, headers等）
+ * @param {any} options - useFetchのオプション（method, body, headers等）
+ * @param {any} options - useFetchのオプション（method, body, headers等）
  * @returns {{ data: Ref<T | null>, error: Ref<any>, refresh: () => Promise<void> }} APIレスポンス、エラー、リフレッシュ関数
  */
-export const useApi = <T = unknown>(
-  path: string,
-  options: FetchOptions = {},
-) => {
+export const useApi = <T = unknown>(path: string, options: any = {}) => {
   const base = useRuntimeConfig().public.apiBase
   const url = `${base}${path}`
 

@@ -280,7 +280,7 @@ export interface ApiSuccess<T> {
  */
 export interface FetchOptions {
   /** HTTPメソッド */
-  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+  method?: 'get' | 'post' | 'put' | 'patch' | 'delete'
   /** リクエストボディ */
   body?: any
   /** リクエストヘッダー */

@@ -31,18 +31,18 @@ if [ "${#staged_ruby[@]}" -gt 0 ]; then
   done
 fi
 
-### Frontend: ESLint
+### Frontend: Prittier & ESLint
 if [ "${#staged_js[@]}" -gt 0 ]; then
   echo "→ [pre-commit] ESLint on staged JS/TS/Vue files…"
   for host_path in "${staged_js[@]}"; do
     # 1) インデックスの変更だけ残し、それ以外を退避
     git stash push --keep-index --quiet
 
-    # 2) ESLint で自動修正をかける
+    # 2) Prittier & ESLint で自動修正をかける
     rel="${host_path#frontend/}"
-    docker compose exec -T web npx eslint --fix "/home/node/app/${rel}"
+    docker compose exec -T web npm run format "/home/node/app/${rel}"
 
-    # 3) ESLint が直した分だけステージに追加
+    # 3) Prittier & ESLint が直した分だけステージに追加
     git add "$host_path"
 
     # 4) 退避していた変更を戻す

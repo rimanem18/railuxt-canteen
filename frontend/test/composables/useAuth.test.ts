@@ -1,25 +1,51 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { Ref } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import type { User } from '~/types/schemas'
+
+/**
+ * モックエラー型定義
+ */
+interface MockError {
+  data?: {
+    errors?: string[]
+  }
+  message?: string
+}
+
+/**
+ * fetchのオプション型定義
+ */
+interface FetchOptions {
+  method?: string
+  baseURL?: string
+  headers?: Record<string, string>
+  body?: Record<string, unknown>
+  onResponse?: (context: { response: { headers: Headers } }) => void
+  onResponseError?: (context: {
+    response: { status: number, statusText: string, _data: unknown }
+  }) => void
+}
 
 describe('useAuth', () => {
-  let mockUser: { value: unknown }
-  let mockAccessToken: { value: unknown }
-  let mockClient: { value: unknown }
-  let mockUid: { value: unknown }
+  let mockUser: Ref<User | null>
+  let mockAccessToken: Ref<string | null>
+  let mockClient: Ref<string | null>
+  let mockUid: Ref<string | null>
 
   beforeEach(() => {
     // 各テストの前にモックをリセット
     vi.clearAllMocks()
 
     // リアクティブな値をモック
-    mockUser = { value: null }
-    mockAccessToken = { value: null }
-    mockClient = { value: null }
-    mockUid = { value: null }
+    mockUser = { value: null } as Ref<User | null>
+    mockAccessToken = { value: null } as Ref<string | null>
+    mockClient = { value: null } as Ref<string | null>
+    mockUid = { value: null } as Ref<string | null>
 
-    // グローバル関数のモック設定
-    global.useState = vi.fn().mockReturnValue(mockUser)
-    global.useCookie = vi.fn().mockImplementation((key: string) => {
+    // globalに設定されたモック関数を使用
+    vi.mocked(global.useState).mockReturnValue(mockUser)
+    vi.mocked(global.useCookie).mockImplementation((key: string) => {
       switch (key) {
         case 'access-token':
           return mockAccessToken
@@ -28,35 +54,43 @@ describe('useAuth', () => {
         case 'uid':
           return mockUid
         default:
-          return { value: null }
+          return { value: null } as Ref<string | null>
       }
     })
-    global.useRuntimeConfig = vi.fn().mockReturnValue({
+    vi.mocked(global.useRuntimeConfig).mockReturnValue({
       public: { apiBase: 'http://localhost:3000' },
+      app: { baseURL: '/', buildAssetsDir: '/_nuxt/', cdnURL: '' },
+      icon: {},
     })
-    global.$fetch = vi.fn()
   })
 
   describe('login', () => {
     it('ログイン成功時にユーザー情報を更新し、trueを返す', async () => {
-      const mockUserData = {
+      const mockUserData: User = {
         id: 1,
         name: 'Test User',
         email: 'test@example.com',
+        image: null,
+        provider: 'email',
+        uid: 'test@example.com',
+        allow_password_change: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }
-      const mockHeaders = new Headers({
-        'access-token': 'test-token',
-        'client': 'test-client',
-        'uid': 'test-uid',
-      })
+      const mockHeaders = new Headers()
+      mockHeaders.set('access-token', 'test-token')
+      mockHeaders.set('client', 'test-client')
+      mockHeaders.set('uid', 'test-uid')
 
-      global.$fetch.mockImplementation((url: string, options: unknown) => {
-        // onResponseコールバックを実行
-        if (options.onResponse) {
-          options.onResponse({ response: { headers: mockHeaders } })
-        }
-        return Promise.resolve({ data: mockUserData })
-      })
+      vi.mocked(global.$fetch).mockImplementation(
+        (url: string, options?: FetchOptions) => {
+          // onResponseコールバックを実行
+          if (options?.onResponse) {
+            options.onResponse({ response: { headers: mockHeaders } })
+          }
+          return Promise.resolve({ data: mockUserData })
+        },
+      )
 
       const { login, user } = useAuth()
       const result = await login('test@example.com', 'password123')
@@ -82,12 +116,12 @@ describe('useAuth', () => {
     })
 
     it('ログイン失敗時にエラーメッセージを設定し、falseを返す', async () => {
-      const mockError = {
+      const mockError: MockError = {
         data: { errors: ['Invalid credentials'] },
         message: 'Login failed',
       }
 
-      global.$fetch.mockRejectedValue(mockError)
+      vi.mocked(global.$fetch).mockRejectedValue(mockError)
 
       const { login, errorMsg } = useAuth()
       const result = await login('test@example.com', 'wrong-password')
@@ -107,12 +141,22 @@ describe('useAuth', () => {
   describe('logout', () => {
     it('ログアウトAPIを呼び出し、認証情報をクリアする', async () => {
       // 初期状態としてログイン済みにしておく
-      mockUser.value = { id: 1, name: 'Test User' }
+      mockUser.value = {
+        id: 1,
+        name: 'Test User',
+        email: 'test@example.com',
+        image: null,
+        provider: 'email',
+        uid: 'test@example.com',
+        allow_password_change: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
       mockAccessToken.value = 'test-token'
       mockClient.value = 'test-client'
       mockUid.value = 'test-uid'
 
-      global.$fetch.mockResolvedValue({})
+      vi.mocked(global.$fetch).mockResolvedValue({})
 
       const { logout } = useAuth()
       await logout()
@@ -137,12 +181,22 @@ describe('useAuth', () => {
 
     it('ログアウトAPIが失敗しても認証情報をクリアする', async () => {
       // 初期状態としてログイン済みにしておく
-      mockUser.value = { id: 1, name: 'Test User' }
+      mockUser.value = {
+        id: 1,
+        name: 'Test User',
+        email: 'test@example.com',
+        image: null,
+        provider: 'email',
+        uid: 'test@example.com',
+        allow_password_change: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
       mockAccessToken.value = 'test-token'
       mockClient.value = 'test-client'
       mockUid.value = 'test-uid'
 
-      global.$fetch.mockRejectedValue(new Error('Network error'))
+      vi.mocked(global.$fetch).mockRejectedValue(new Error('Network error'))
 
       const { logout } = useAuth()
 
@@ -169,20 +223,31 @@ describe('useAuth', () => {
       mockClient.value = 'test-client'
       mockUid.value = 'test-uid'
 
-      const mockUserData = { id: 1, name: 'Test User' }
-      const mockHeaders = new Headers({
-        'access-token': 'new-token',
-        'client': 'new-client',
-        'uid': 'new-uid',
-      })
+      const mockUserData: User = {
+        id: 1,
+        name: 'Test User',
+        email: 'test@example.com',
+        image: null,
+        provider: 'email',
+        uid: 'test@example.com',
+        allow_password_change: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+      const mockHeaders = new Headers()
+      mockHeaders.set('access-token', 'new-token')
+      mockHeaders.set('client', 'new-client')
+      mockHeaders.set('uid', 'new-uid')
 
-      global.$fetch.mockImplementation((url: string, options: unknown) => {
-        // onResponseコールバックを実行
-        if (options.onResponse) {
-          options.onResponse({ response: { headers: mockHeaders } })
-        }
-        return Promise.resolve({ data: mockUserData })
-      })
+      vi.mocked(global.$fetch).mockImplementation(
+        (url: string, options?: FetchOptions) => {
+          // onResponseコールバックを実行
+          if (options?.onResponse) {
+            options.onResponse({ response: { headers: mockHeaders } })
+          }
+          return Promise.resolve({ data: mockUserData })
+        },
+      )
 
       const { fetchUser, user } = useAuth()
       await fetchUser()
@@ -229,9 +294,19 @@ describe('useAuth', () => {
       mockAccessToken.value = 'test-token'
       mockClient.value = 'test-client'
       mockUid.value = 'test-uid'
-      mockUser.value = { id: 1, name: 'Test User' }
+      mockUser.value = {
+        id: 1,
+        name: 'Test User',
+        email: 'test@example.com',
+        image: null,
+        provider: 'email',
+        uid: 'test@example.com',
+        allow_password_change: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
 
-      global.$fetch.mockRejectedValue(new Error('Unauthorized'))
+      vi.mocked(global.$fetch).mockRejectedValue(new Error('Unauthorized'))
 
       const { fetchUser } = useAuth()
       await fetchUser()
@@ -246,7 +321,17 @@ describe('useAuth', () => {
 
   describe('isLoggedIn', () => {
     it('ユーザーが存在する場合はtrueを返す', () => {
-      mockUser.value = { id: 1, name: 'Test User' }
+      mockUser.value = {
+        id: 1,
+        name: 'Test User',
+        email: 'test@example.com',
+        image: null,
+        provider: 'email',
+        uid: 'test@example.com',
+        allow_password_change: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
 
       const { isLoggedIn } = useAuth()
 
@@ -265,7 +350,17 @@ describe('useAuth', () => {
   describe('clearAuth', () => {
     it('全ての認証情報をクリアする', () => {
       // 初期状態として認証情報を設定
-      mockUser.value = { id: 1, name: 'Test User' }
+      mockUser.value = {
+        id: 1,
+        name: 'Test User',
+        email: 'test@example.com',
+        image: null,
+        provider: 'email',
+        uid: 'test@example.com',
+        allow_password_change: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
       mockAccessToken.value = 'test-token'
       mockClient.value = 'test-client'
       mockUid.value = 'test-uid'

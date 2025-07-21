@@ -1,8 +1,12 @@
-export default defineNuxtRouteMiddleware((to, from) => {
-  const { isLoggedIn } = useAuth()
+import type { RouteLocationNormalized } from 'vue-router'
 
-  // ログインしていない場合はログインページにリダイレクト
-  if (!isLoggedIn.value) {
-    return navigateTo('/login')
-  }
-})
+export default defineNuxtRouteMiddleware(
+  (to: RouteLocationNormalized, from: RouteLocationNormalized) => {
+    const { isLoggedIn } = useAuth()
+
+    // ログインしていない場合はログインページにリダイレクト
+    if (!isLoggedIn.value) {
+      return navigateTo('/login')
+    }
+  },
+)

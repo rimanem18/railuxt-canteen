@@ -41,8 +41,8 @@ if [ "${#staged_js[@]}" -gt 0 ]; then
     docker_paths+=("/home/node/app/${rel}")
   done
 
-  docker compose exec -T web npx eslint --fix "${docker_paths[@]}"
   docker compose exec -T web npx prettier --write "${docker_paths[@]}"
+  docker compose exec -T web npx eslint --fix "${docker_paths[@]}"
 
   git add "${staged_js[@]}"
   git stash pop --quiet || true

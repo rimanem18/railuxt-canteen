@@ -6,48 +6,46 @@ echo "→ [pre-commit] Formatting and linting staged files…"
 
 # ステージされたファイル一覧を取得
 mapfile -t staged_ruby < <(
-  git diff --cached --name-only --diff-filter=ACM | grep '\.rb$' || true
+  git diff --cached --name-only --diff-filter=ACM | grep '^backend/.*\.rb$' || true
 )
 mapfile -t staged_js < <(
-  git diff --cached --name-only --diff-filter=ACM | grep -E '\.(js|ts|vue)$' || true
+  git diff --cached --name-only --diff-filter=ACM | grep -E '^frontend/.*\.(js|ts|vue)$' || true
 )
 
-### Backend: RuboCop
+### Backend: RuboCop（バッチ処理）
 if [ "${#staged_ruby[@]}" -gt 0 ]; then
   echo "→ [pre-commit] RuboCop on staged Ruby files…"
+  git stash push --keep-index --quiet
+
+  docker_paths=()
   for host_path in "${staged_ruby[@]}"; do
-    # 1) インデックスにある変更だけ残して、それ以外（ワーキングツリーの未ステージ変更）を退避
-    git stash push --keep-index --quiet
-
-    # 2) RuboCop を実行（--force-exclusion と -A で自動修正）、修正結果はワーキングツリーに反映
     rel="${host_path#backend/}"
-    docker compose exec -T app rubocop --force-exclusion -A "/app/${rel}"
-
-    # 3) RuboCop が書き換えた差分だけをステージに追加
-    git add "$host_path"
-
-    # 4) 退避していたワーキングツリーの変更を戻す（インデックスは上書かれない）
-    git stash pop --quiet || true
+    docker_paths+=("/app/${rel}")
   done
+
+  docker compose exec -T app rubocop --force-exclusion -A "${docker_paths[@]}"
+
+  # 変更されたファイルを再ステージ
+  git add "${staged_ruby[@]}"
+  git stash pop --quiet || true
 fi
 
-### Frontend: ESLint
+### Frontend: ESLint & Prettier（バッチ処理）
 if [ "${#staged_js[@]}" -gt 0 ]; then
-  echo "→ [pre-commit] ESLint on staged JS/TS/Vue files…"
+  echo "→ [pre-commit] ESLint & Prettier on staged JS/TS/Vue files…"
+  git stash push --keep-index --quiet
+
+  docker_paths=()
   for host_path in "${staged_js[@]}"; do
-    # 1) インデックスの変更だけ残し、それ以外を退避
-    git stash push --keep-index --quiet
-
-    # 2) ESLint で自動修正をかける
     rel="${host_path#frontend/}"
-    docker compose exec -T web npx eslint --fix "/home/node/app/${rel}"
-
-    # 3) ESLint が直した分だけステージに追加
-    git add "$host_path"
-
-    # 4) 退避していた変更を戻す
-    git stash pop --quiet || true
+    docker_paths+=("/home/node/app/${rel}")
   done
+
+  docker compose exec -T web npx prettier --write "${docker_paths[@]}"
+  docker compose exec -T web npx eslint --fix "${docker_paths[@]}"
+
+  git add "${staged_js[@]}"
+  git stash pop --quiet || true
 fi
 
 echo "→ [pre-commit] All done."

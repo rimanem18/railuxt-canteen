@@ -8,7 +8,10 @@
       <div>
         <span class="font-medium">{{ order.dish.name }}</span>
         <span class="ml-2 text-gray-600">× {{ order.quantity }}</span>
-        <span v-if="order.status" class="ml-2 text-gray-500">(提供済み)</span>
+        <span
+          v-if="order.status"
+          class="ml-2 text-gray-500"
+        >(提供済み)</span>
       </div>
       <button
         v-if="!order.status"
@@ -25,36 +28,36 @@
 /** 料理の型定義 */
 interface Dish {
   /** 料理ID */
-  id: number;
+  id: number
   /** 料理名 */
-  name: string;
+  name: string
   /** 価格（円） */
-  price: number;
+  price: number
 }
 
 /** 注文の型定義 */
 interface Order {
   /** 注文ID */
-  id: number;
+  id: number
   /** 注文数量 */
-  quantity: number;
+  quantity: number
   /** 提供状況（true: 提供済み, false: 未提供） */
-  status: boolean;
+  status: boolean
   /** 注文された料理 */
-  dish: Dish;
+  dish: Dish
 }
 
 /** 注文一覧を表示するコンポーネント */
 defineProps<{
   /** 表示する注文のリスト */
-  orders: Order[];
-}>();
+  orders: Order[]
+}>()
 
 /**
  * 注文の提供完了イベント
  * @param complete - 注文IDを受け取る
  */
 defineEmits<{
-  complete: [orderId: number];
-}>();
+  complete: [orderId: number]
+}>()
 </script>

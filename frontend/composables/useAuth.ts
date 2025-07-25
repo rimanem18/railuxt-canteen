@@ -1,14 +1,5 @@
-import { ref, computed } from "vue";
-
-/** ユーザー情報の型定義 */
-interface User {
-  /** ユーザーID */
-  id: number;
-  /** ユーザー名 */
-  name: string;
-  /** メールアドレス */
-  email: string;
-}
+import { ref, computed } from 'vue'
+import type { User, AuthResponse, AuthValidateResponse } from '~/types/schemas'
 
 /**
  * 認証機能を提供するコンポーザブル関数
@@ -17,29 +8,29 @@ interface User {
 export const useAuth = () => {
   // ユーザー情報をuseStateで管理（アプリ全体で共有）
   // リロードしても状態が保持される
-  const user = useState<User | null>("user", () => null);
-  const errorMsg = ref<string | null>(null);
+  const user = useState('user', () => null as User | null)
+  const errorMsg = ref<string | null>(null)
 
   // ログイン状態の判定
-  const isLoggedIn = computed(() => !!user.value);
+  const isLoggedIn = computed(() => !!user.value)
 
   // DeviseTokenAuthで必要な認証トークンを管理するためのCookie
-  const accessToken = useCookie("access-token");
-  const client = useCookie("client");
-  const uid = useCookie("uid");
+  const accessToken = useCookie('access-token')
+  const client = useCookie('client')
+  const uid = useCookie('uid')
 
   /**
    * レスポンスヘッダーから認証トークンを取得してCookieに保存
    * @param {Headers} headers - レスポンスヘッダー
    */
   function saveHeaders(headers: Headers) {
-    const access = headers.get("access-token");
-    const clientValue = headers.get("client");
-    const uidValue = headers.get("uid");
+    const access = headers.get('access-token')
+    const clientValue = headers.get('client')
+    const uidValue = headers.get('uid')
 
-    if (access) accessToken.value = access;
-    if (clientValue) client.value = clientValue;
-    if (uidValue) uid.value = uidValue;
+    if (access) accessToken.value = access
+    if (clientValue) client.value = clientValue
+    if (uidValue) uid.value = uidValue
   }
 
   /**
@@ -47,11 +38,11 @@ export const useAuth = () => {
    * @returns {Record<string, string>} 認証ヘッダー
    */
   function getHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {};
-    if (accessToken.value) headers["access-token"] = accessToken.value;
-    if (client.value) headers["client"] = client.value;
-    if (uid.value) headers["uid"] = uid.value;
-    return headers;
+    const headers: Record<string, string> = {}
+    if (accessToken.value) headers['access-token'] = accessToken.value
+    if (client.value) headers['client'] = client.value
+    if (uid.value) headers['uid'] = uid.value
+    return headers
   }
 
   /**
@@ -61,30 +52,34 @@ export const useAuth = () => {
   async function fetchUser() {
     // 必要なトークンが全て揃っていない場合は処理をスキップ
     if (!accessToken.value || !client.value || !uid.value) {
-      return;
+      return
     }
 
     try {
-      const config = useRuntimeConfig();
-      const baseUrl = config.public.apiBase || "";
-      const response = await $fetch("/api/v1/auth/validate_token", {
-        method: "GET",
-        baseURL: baseUrl,
-        headers: {
-          "Content-Type": "application/json",
-          ...getHeaders(),
+      const config = useRuntimeConfig()
+      const baseUrl = config.public.apiBase || ''
+      const response = await $fetch<AuthValidateResponse>(
+        '/api/v1/auth/validate_token',
+        {
+          method: 'GET',
+          baseURL: baseUrl,
+          headers: {
+            'Content-Type': 'application/json',
+            ...getHeaders(),
+          },
+          onResponse({ response }) {
+            // トークンの更新
+            saveHeaders(response.headers)
+          },
         },
-        onResponse({ response }) {
-          // トークンの更新
-          saveHeaders(response.headers);
-        },
-      });
+      )
 
       // ユーザー情報の取得
-      user.value = response.data;
-    } catch (error) {
-      console.error("認証エラー:", error);
-      clearAuth();
+      user.value = response.data
+    }
+    catch (error) {
+      console.error('認証エラー:', error)
+      clearAuth()
     }
   }
 
@@ -92,10 +87,10 @@ export const useAuth = () => {
    * 認証情報を全てクリア
    */
   function clearAuth() {
-    accessToken.value = null;
-    client.value = null;
-    uid.value = null;
-    user.value = null;
+    accessToken.value = null
+    client.value = null
+    uid.value = null
+    user.value = null
   }
 
   /**
@@ -105,41 +100,50 @@ export const useAuth = () => {
    * @returns {Promise<boolean>} ログイン成功時true、失敗時false
    */
   async function login(email: string, password: string) {
-    errorMsg.value = null;
+    errorMsg.value = null
     try {
-      const config = useRuntimeConfig();
-      const baseUrl = config.public.apiBase || "";
-      const response = await $fetch("/api/v1/auth/sign_in", {
-        method: "POST",
+      const config = useRuntimeConfig()
+      const baseUrl = config.public.apiBase || ''
+      const response = await $fetch<AuthResponse>('/api/v1/auth/sign_in', {
+        method: 'POST',
         baseURL: baseUrl,
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
         body: { email, password },
         onResponse({ response }) {
           // トークンを保存
-          saveHeaders(response.headers);
+          saveHeaders(response.headers)
         },
         onResponseError({ response }) {
           // デバッグ用ログ出力
           console.error(
-            "Login error response:",
+            'Login error response:',
             response.status,
             response.statusText,
-          );
-          console.error("Response body:", response._data);
+          )
+          console.error('Response body:', response._data)
         },
-      });
+      })
 
       // ユーザー情報を取得
-      user.value = response.data;
+      user.value = response.data
 
-      return true;
-    } catch (e: any) {
-      console.error("Login error:", e);
+      return true
+    }
+    catch (e: unknown) {
+      console.error('Login error:', e)
       // エラーメッセージの優先順位：API側のエラー配列 > 通常のエラーメッセージ > デフォルトメッセージ
-      errorMsg.value =
-        e.data?.errors?.join(", ") || e.message || "ログイン失敗";
-      clearAuth();
-      return false;
+      if (e && typeof e === 'object' && 'data' in e) {
+        const errorData = e.data as any
+        errorMsg.value = errorData?.errors?.join(', ') || 'ログイン失敗'
+      }
+      else if (e && typeof e === 'object' && 'message' in e) {
+        errorMsg.value = (e as { message: string }).message
+      }
+      else {
+        errorMsg.value = 'ログイン失敗'
+      }
+      clearAuth()
+      return false
     }
   }
 
@@ -149,16 +153,17 @@ export const useAuth = () => {
    */
   async function logout() {
     try {
-      const config = useRuntimeConfig();
-      const baseUrl = config.public.apiBase || "";
-      await $fetch("/api/v1/auth/sign_out", {
-        method: "DELETE",
+      const config = useRuntimeConfig()
+      const baseUrl = config.public.apiBase || ''
+      await $fetch('/api/v1/auth/sign_out', {
+        method: 'DELETE',
         baseURL: baseUrl,
         headers: getHeaders(),
-      });
-    } finally {
+      })
+    }
+    finally {
       // API呼び出しの成功・失敗に関わらず認証情報をクリア
-      clearAuth();
+      clearAuth()
     }
   }
 
@@ -171,5 +176,5 @@ export const useAuth = () => {
     fetchUser,
     saveHeaders,
     clearAuth,
-  };
-};
+  }
+}

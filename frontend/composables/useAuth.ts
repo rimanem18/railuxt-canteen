@@ -8,7 +8,7 @@ import type { User, AuthResponse, AuthValidateResponse } from '~/types/schemas'
 export const useAuth = () => {
   // ユーザー情報をuseStateで管理（アプリ全体で共有）
   // リロードしても状態が保持される
-  const user = useState<User | null>('user', () => null)
+  const user = useState('user', () => null as User | null)
   const errorMsg = ref<string | null>(null)
 
   // ログイン状態の判定

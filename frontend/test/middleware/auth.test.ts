@@ -14,7 +14,7 @@ describe('auth middleware', () => {
     mockIsLoggedIn.value = false
 
     // useAuthのモック設定（globalのモックを使用）
-    vi.mocked(global.useAuth).mockReturnValue({
+    vi.mocked((globalThis as any).useAuth).mockReturnValue({
       user: { value: null },
       isLoggedIn: mockIsLoggedIn,
       errorMsg: { value: null },
@@ -44,7 +44,7 @@ describe('auth middleware', () => {
     const result = authMiddleware(mockRoute, mockRoute)
 
     // navigateToが呼ばれないことをチェック
-    expect(global.navigateTo).not.toHaveBeenCalled()
+    expect((globalThis as any).navigateTo).not.toHaveBeenCalled()
     // 関数が何も返さないことをチェック
     expect(result).toBeUndefined()
   })
@@ -67,7 +67,7 @@ describe('auth middleware', () => {
     authMiddleware(mockRoute, mockRoute)
 
     // navigateToが正しい引数で呼ばれたかチェック
-    expect(global.navigateTo).toHaveBeenCalledWith('/login')
+    expect((globalThis as any).navigateTo).toHaveBeenCalledWith('/login')
   })
 
   it('ログイン状態がfalseの場合、/loginにリダイレクトする', () => {
@@ -87,7 +87,7 @@ describe('auth middleware', () => {
 
     authMiddleware(mockRoute, mockRoute)
 
-    expect(global.navigateTo).toHaveBeenCalledWith('/login')
+    expect((globalThis as any).navigateTo).toHaveBeenCalledWith('/login')
   })
 
   it('ログイン状態がtrueの場合、リダイレクトしない', () => {
@@ -107,7 +107,7 @@ describe('auth middleware', () => {
 
     authMiddleware(mockRoute, mockRoute)
 
-    expect(global.navigateTo).not.toHaveBeenCalled()
+    expect((globalThis as any).navigateTo).not.toHaveBeenCalled()
   })
 
   it('toとfromパラメータを受け取る', () => {
@@ -139,6 +139,6 @@ describe('auth middleware', () => {
     authMiddleware(mockTo, mockFrom)
 
     // パラメータに関係なくログイン状態のみをチェックする
-    expect(global.navigateTo).toHaveBeenCalledWith('/login')
+    expect((globalThis as any).navigateTo).toHaveBeenCalledWith('/login')
   })
 })

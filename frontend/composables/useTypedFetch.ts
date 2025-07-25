@@ -3,7 +3,7 @@
  * Zodスキーマによる実行時バリデーションと型安全性を提供
  */
 
-import type { ZodSchema, ZodTypeDef } from 'zod'
+import type { ZodSchema, ZodType } from 'zod'
 import type { UseFetchOptions } from '#app'
 import type { FetchOptions } from '~/types/api'
 
@@ -16,7 +16,7 @@ import type { FetchOptions } from '~/types/api'
  */
 export async function useTypedFetch<T>(
   url: string,
-  schema: ZodSchema<T, ZodTypeDef, any>,
+  schema: ZodSchema<T, ZodType, any>,
   options: FetchOptions = {},
 ): Promise<{ data: T, error: null } | { data: null, error: Error }> {
   try {
@@ -64,7 +64,7 @@ export async function useTypedFetch<T>(
           client.value = null
           uid.value = null
           // ユーザー情報もクリア
-          const user = useState<unknown>('user', () => null)
+          const user = useState('user', () => null as unknown)
           user.value = null
         }
       },
@@ -88,7 +88,7 @@ export async function useTypedFetch<T>(
  */
 export function useReactiveTypedFetch<T>(
   url: string,
-  schema: ZodSchema<T, ZodTypeDef, any>,
+  schema: ZodSchema<T, ZodType, any>,
   options: FetchOptions = {},
 ) {
   // 基本的なfetch設定
@@ -139,7 +139,7 @@ export function useReactiveTypedFetch<T>(
         client.value = null
         uid.value = null
         // ユーザー情報もクリア
-        const user = useState<unknown>('user', () => null)
+        const user = useState('user', () => null as unknown)
         user.value = null
       }
     },
@@ -189,7 +189,7 @@ export function useAuthTypedFetch() {
      */
     async post<T>(
       url: string,
-      schema: ZodSchema<T, ZodTypeDef, any>,
+      schema: ZodSchema<T, ZodType, any>,
       body: any,
       options: FetchOptions = {},
     ) {
@@ -205,7 +205,7 @@ export function useAuthTypedFetch() {
      */
     async get<T>(
       url: string,
-      schema: ZodSchema<T, ZodTypeDef, any>,
+      schema: ZodSchema<T, ZodType, any>,
       options: FetchOptions = {},
     ) {
       return useTypedFetch(url, schema, {
@@ -219,7 +219,7 @@ export function useAuthTypedFetch() {
      */
     async put<T>(
       url: string,
-      schema: ZodSchema<T, ZodTypeDef, any>,
+      schema: ZodSchema<T, ZodType, any>,
       body: any,
       options: FetchOptions = {},
     ) {
@@ -235,7 +235,7 @@ export function useAuthTypedFetch() {
      */
     async delete<T>(
       url: string,
-      schema: ZodSchema<T, ZodTypeDef, any>,
+      schema: ZodSchema<T, ZodType, any>,
       options: FetchOptions = {},
     ) {
       return useTypedFetch(url, schema, {

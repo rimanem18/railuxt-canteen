@@ -24,18 +24,10 @@ export const useApi = <T = unknown>(
   if (client.value) authHeaders['client'] = client.value
   if (uid.value) authHeaders['uid'] = uid.value
 
-  // HTTPメソッドを小文字に変換
-  const normalizedMethod = options.method?.toLowerCase() as
-    | 'get'
-    | 'post'
-    | 'put'
-    | 'patch'
-    | 'delete'
-    | undefined
-
+  // useFetchに適合する型に変換
   const { data, error, refresh } = useFetch<T>(url, {
-    method: normalizedMethod,
-    body: options.body,
+    method: options.method as any, // NuxtのuseFetchのmethod型は複雑なため型アサーション
+    body: options.body as any, // bodyの型はAPIによって可変のため型アサーション
     query: options.query,
     headers: {
       ...authHeaders,
@@ -60,7 +52,7 @@ export const useApi = <T = unknown>(
         client.value = null
         uid.value = null
         // ユーザー情報もクリア
-        const user = useState<unknown>('user', () => null)
+        const user = useState('user', () => null as unknown)
         user.value = null
       }
     },

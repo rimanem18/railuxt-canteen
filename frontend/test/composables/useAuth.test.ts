@@ -44,20 +44,22 @@ describe('useAuth', () => {
     mockUid = { value: null } as Ref<string | null>
 
     // globalに設定されたモック関数を使用
-    vi.mocked(global.useState).mockReturnValue(mockUser)
-    vi.mocked(global.useCookie).mockImplementation((key: string) => {
-      switch (key) {
-        case 'access-token':
-          return mockAccessToken
-        case 'client':
-          return mockClient
-        case 'uid':
-          return mockUid
-        default:
-          return { value: null } as Ref<string | null>
-      }
-    })
-    vi.mocked(global.useRuntimeConfig).mockReturnValue({
+    vi.mocked((globalThis as any).useState).mockReturnValue(mockUser)
+    vi.mocked((globalThis as any).useCookie).mockImplementation(
+      (key: string) => {
+        switch (key) {
+          case 'access-token':
+            return mockAccessToken
+          case 'client':
+            return mockClient
+          case 'uid':
+            return mockUid
+          default:
+            return { value: null } as Ref<string | null>
+        }
+      },
+    )
+    vi.mocked((globalThis as any).useRuntimeConfig).mockReturnValue({
       public: { apiBase: 'http://localhost:3000' },
       app: { baseURL: '/', buildAssetsDir: '/_nuxt/', cdnURL: '' },
       icon: {},
@@ -82,8 +84,8 @@ describe('useAuth', () => {
       mockHeaders.set('client', 'test-client')
       mockHeaders.set('uid', 'test-uid')
 
-      vi.mocked(global.$fetch).mockImplementation(
-        (url: string, options?: FetchOptions) => {
+      vi.mocked((globalThis as any).$fetch).mockImplementation(
+        (url: any, options?: any) => {
           // onResponseコールバックを実行
           if (options?.onResponse) {
             options.onResponse({ response: { headers: mockHeaders } })
@@ -96,7 +98,7 @@ describe('useAuth', () => {
       const result = await login('test@example.com', 'password123')
 
       // APIが正しく呼び出されたかチェック
-      expect(global.$fetch).toHaveBeenCalledWith('/api/v1/auth/sign_in', {
+      expect(globalThis.$fetch).toHaveBeenCalledWith('/api/v1/auth/sign_in', {
         method: 'POST',
         baseURL: 'http://localhost:3000',
         headers: { 'Content-Type': 'application/json' },
@@ -121,7 +123,7 @@ describe('useAuth', () => {
         message: 'Login failed',
       }
 
-      vi.mocked(global.$fetch).mockRejectedValue(mockError)
+      vi.mocked((globalThis as any).$fetch).mockRejectedValue(mockError)
 
       const { login, errorMsg } = useAuth()
       const result = await login('test@example.com', 'wrong-password')
@@ -156,13 +158,13 @@ describe('useAuth', () => {
       mockClient.value = 'test-client'
       mockUid.value = 'test-uid'
 
-      vi.mocked(global.$fetch).mockResolvedValue({})
+      vi.mocked((globalThis as any).$fetch).mockResolvedValue({})
 
       const { logout } = useAuth()
       await logout()
 
       // APIが正しく呼び出されたかチェック
-      expect(global.$fetch).toHaveBeenCalledWith('/api/v1/auth/sign_out', {
+      expect(globalThis.$fetch).toHaveBeenCalledWith('/api/v1/auth/sign_out', {
         method: 'DELETE',
         baseURL: 'http://localhost:3000',
         headers: {
@@ -196,7 +198,9 @@ describe('useAuth', () => {
       mockClient.value = 'test-client'
       mockUid.value = 'test-uid'
 
-      vi.mocked(global.$fetch).mockRejectedValue(new Error('Network error'))
+      vi.mocked((globalThis as any).$fetch).mockRejectedValue(
+        new Error('Network error'),
+      )
 
       const { logout } = useAuth()
 
@@ -239,8 +243,8 @@ describe('useAuth', () => {
       mockHeaders.set('client', 'new-client')
       mockHeaders.set('uid', 'new-uid')
 
-      vi.mocked(global.$fetch).mockImplementation(
-        (url: string, options?: FetchOptions) => {
+      vi.mocked((globalThis as any).$fetch).mockImplementation(
+        (url: any, options?: any) => {
           // onResponseコールバックを実行
           if (options?.onResponse) {
             options.onResponse({ response: { headers: mockHeaders } })
@@ -253,7 +257,7 @@ describe('useAuth', () => {
       await fetchUser()
 
       // APIが正しく呼び出されたかチェック
-      expect(global.$fetch).toHaveBeenCalledWith(
+      expect(globalThis.$fetch).toHaveBeenCalledWith(
         '/api/v1/auth/validate_token',
         {
           method: 'GET',
@@ -286,7 +290,7 @@ describe('useAuth', () => {
       await fetchUser()
 
       // APIが呼び出されないことをチェック
-      expect(global.$fetch).not.toHaveBeenCalled()
+      expect(globalThis.$fetch).not.toHaveBeenCalled()
     })
 
     it('APIエラー時は認証情報をクリアする', async () => {
@@ -306,7 +310,9 @@ describe('useAuth', () => {
         updated_at: new Date().toISOString(),
       }
 
-      vi.mocked(global.$fetch).mockRejectedValue(new Error('Unauthorized'))
+      vi.mocked((globalThis as any).$fetch).mockRejectedValue(
+        new Error('Unauthorized'),
+      )
 
       const { fetchUser } = useAuth()
       await fetchUser()

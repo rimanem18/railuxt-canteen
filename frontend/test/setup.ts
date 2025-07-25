@@ -1,19 +1,12 @@
 import { vi } from 'vitest'
 import type { Ref } from 'vue'
 
-// グローバル型定義を拡張
-declare global {
-  let useState: ReturnType<typeof vi.fn>
-  let useCookie: ReturnType<typeof vi.fn>
-  let useRuntimeConfig: ReturnType<typeof vi.fn>
-  let $fetch: ReturnType<typeof vi.fn>
-  let navigateTo: ReturnType<typeof vi.fn>
-  let defineNuxtRouteMiddleware: ReturnType<typeof vi.fn>
-  let useAuth: ReturnType<typeof vi.fn>
-}
+// Nuxtコンポーザブルのグローバルモック設定
+// 型の競合を回避するため、直接プロパティを設定
 
-// Nuxtコンポーザブルのグローバルモック
-global.useState = vi.fn(<T>(key: string, init?: () => T): Ref<T> => {
+// グローバルにNuxtコンポーザブルを設定（型検査を一時的に無効化）
+// @ts-expect-error - テスト環境でのNuxtコンポーザブルモック設定
+globalThis.useState = vi.fn(<T>(key: string, init?: () => T): Ref<T> => {
   // useState のシンプルなモック実装
   let value = init ? init() : undefined
   return {
@@ -26,7 +19,8 @@ global.useState = vi.fn(<T>(key: string, init?: () => T): Ref<T> => {
   } as Ref<T>
 })
 
-global.useCookie = vi.fn(<T>(key: string): Ref<T | null> => {
+// @ts-expect-error - テスト環境でのNuxtコンポーザブルモック設定
+globalThis.useCookie = vi.fn(<T>(key: string): Ref<T | null> => {
   // useCookie のシンプルなモック実装
   let value: T | null = null
   return {
@@ -39,18 +33,23 @@ global.useCookie = vi.fn(<T>(key: string): Ref<T | null> => {
   } as Ref<T | null>
 })
 
-global.useRuntimeConfig = vi.fn(() => ({
+// @ts-expect-error - テスト環境でのNuxtコンポーザブルモック設定
+globalThis.useRuntimeConfig = vi.fn(() => ({
   public: { apiBase: 'http://localhost:3000' },
   app: { baseURL: '/', buildAssetsDir: '/_nuxt/', cdnURL: '' },
   icon: {},
 }))
 
-global.$fetch = vi.fn()
-global.navigateTo = vi.fn()
-global.defineNuxtRouteMiddleware = vi.fn(
+// @ts-expect-error - テスト環境でのNuxtコンポーザブルモック設定
+globalThis.$fetch = vi.fn()
+// @ts-expect-error - テスト環境でのNuxtコンポーザブルモック設定
+globalThis.navigateTo = vi.fn()
+// @ts-expect-error - テスト環境でのNuxtコンポーザブルモック設定
+globalThis.defineNuxtRouteMiddleware = vi.fn(
   <T extends (...args: unknown[]) => unknown>(fn: T): T => fn,
 )
-global.useAuth = vi.fn()
+// @ts-expect-error - テスト環境でのNuxtコンポーザブルモック設定
+globalThis.useAuth = vi.fn()
 
 /**
  * コンソール出力をモック（テスト時のログ抑制）

@@ -16,6 +16,10 @@ export const UserSchema = z.object({
   id: z.number().int().positive(),
   name: z.string().min(1, 'ユーザー名は必須です'),
   email: z.string().email('有効なメールアドレスを入力してください'),
+  image: z.string().url().nullable().optional(), // テストで使用されるプロパティ
+  provider: z.string().optional(), // テストで使用されるプロパティ
+  uid: z.string().optional(), // テストで使用されるプロパティ（認証用UID）
+  allow_password_change: z.boolean().optional(), // テストで使用されるプロパティ（パスワード変更許可）
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
 })

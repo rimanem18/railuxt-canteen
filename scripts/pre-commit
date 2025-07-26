@@ -4,50 +4,63 @@ set -eu
 cd "$(git rev-parse --show-toplevel)"
 echo "→ [pre-commit] Formatting and linting staged files…"
 
-# ステージされたファイル一覧を取得
-mapfile -t staged_ruby < <(
-  git diff --cached --name-only --diff-filter=ACM | grep '^backend/.*\.rb$' || true
-)
-mapfile -t staged_js < <(
-  git diff --cached --name-only --diff-filter=ACM | grep -E '^frontend/.*\.(js|ts|vue)$' || true
-)
+# 一時的にステージされたファイルを処理する関数
+process_staged_files() {
+  local file_pattern="$1"
+  local process_func="$2"
 
-### Backend: RuboCop（バッチ処理）
-if [ "${#staged_ruby[@]}" -gt 0 ]; then
-  echo "→ [pre-commit] RuboCop on staged Ruby files…"
-  git stash push --keep-index --quiet
+  # ステージされたファイルを取得
+  mapfile -t staged_files < <(
+    git diff --cached --name-only --diff-filter=ACM | grep "$file_pattern" || true
+  )
 
-  docker_paths=()
-  for host_path in "${staged_ruby[@]}"; do
-    rel="${host_path#backend/}"
-    docker_paths+=("/app/${rel}")
-  done
+  if [ "${#staged_files[@]}" -gt 0 ] && [ -n "${staged_files[0]}" ]; then
+    echo "→ Processing ${#staged_files[@]} files with pattern: $file_pattern"
 
-  docker compose exec -T app rubocop --force-exclusion -A "${docker_paths[@]}"
+    # 各ファイルに対して個別に処理
+    for file in "${staged_files[@]}"; do
+      # ステージされた内容を一時ファイルに保存
+      temp_file=$(mktemp)
+      git show ":$file" > "$temp_file"
 
-  # 変更されたファイルを再ステージ
-  git add "${staged_ruby[@]}"
-  git stash pop --quiet || true
-  sleep 0.1
-fi
+      # 一時ファイルを実際の場所にコピー
+      cp "$temp_file" "$file"
 
-### Frontend: ESLint & Prettier（バッチ処理）
-if [ "${#staged_js[@]}" -gt 0 ]; then
-  echo "→ [pre-commit] ESLint & Prettier on staged JS/TS/Vue files…"
-  git stash push --keep-index --quiet
+      # 処理を実行
+      $process_func "$file"
 
-  docker_paths=()
-  for host_path in "${staged_js[@]}"; do
-    rel="${host_path#frontend/}"
-    docker_paths+=("/home/node/app/${rel}")
-  done
+      # 処理結果をステージに追加
+      git add "$file"
 
-  docker compose exec -T web npx prettier --write "${docker_paths[@]}"
-  docker compose exec -T web npx eslint --fix "${docker_paths[@]}"
+      # 一時ファイルを削除
+      rm "$temp_file"
+    done
+  fi
+}
 
-  git add "${staged_js[@]}"
-  git stash pop --quiet || true
-  sleep 0.1
-fi
+# Ruby用の処理関数
+process_ruby_file() {
+  local file="$1"
+  local rel="${file#backend/}"
+  local docker_path="/app/${rel}"
+
+  echo "  → Processing Ruby file: $file"
+  docker compose exec -T app rubocop --force-exclusion -A "$docker_path" || true
+}
+
+# JavaScript/TypeScript用の処理関数
+process_js_file() {
+  local file="$1"
+  local rel="${file#frontend/}"
+  local docker_path="/home/node/app/${rel}"
+
+  echo "  → Processing JS/TS file: $file"
+  docker compose exec -T web npx prettier --write "$docker_path" || true
+  docker compose exec -T web npx eslint --fix "$docker_path" || true
+}
+
+# ファイルを処理
+process_staged_files '^backend/.*\.rb$' process_ruby_file
+process_staged_files '^frontend/.*\.(js|ts|vue)$' process_js_file
 
 echo "→ [pre-commit] All done."

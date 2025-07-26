@@ -9,12 +9,12 @@
         <span class="font-medium">{{ order.dish.name }}</span>
         <span class="ml-2 text-gray-600">× {{ order.quantity }}</span>
         <span
-          v-if="order.status"
+          v-if="order.status === 'completed'"
           class="ml-2 text-gray-500"
         >(提供済み)</span>
       </div>
       <button
-        v-if="!order.status"
+        v-if="order.status !== 'completed'"
         class="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
         @click="$emit('complete', order.id)"
       >
@@ -25,27 +25,7 @@
 </template>
 
 <script setup lang="ts">
-/** 料理の型定義 */
-interface Dish {
-  /** 料理ID */
-  id: number
-  /** 料理名 */
-  name: string
-  /** 価格（円） */
-  price: number
-}
-
-/** 注文の型定義 */
-interface Order {
-  /** 注文ID */
-  id: number
-  /** 注文数量 */
-  quantity: number
-  /** 提供状況（true: 提供済み, false: 未提供） */
-  status: boolean
-  /** 注文された料理 */
-  dish: Dish
-}
+import type { Order } from '~/types/schemas'
 
 /** 注文一覧を表示するコンポーネント */
 defineProps<{

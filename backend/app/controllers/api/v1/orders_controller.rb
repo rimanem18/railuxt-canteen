@@ -37,13 +37,13 @@ module Api
         end
       end
 
-      # 更新アクション（提供完了フラグの更新）
+      # 更新アクション（注文ステータスの更新）
       # PATCH /api/v1/orders/:id
-      # ・URLパラメータから該当 order のレコードを取得し、status を true（提供済み）に更新する
+      # ・URLパラメータから該当 order のレコードを取得し、リクエストで指定されたstatusに更新する
       # ・更新に成功したら 200 OK とともに更新済みの order を返却
       # ・更新に失敗したら 422 Unprocessable Entity とエラーメッセージを返却
       def update
-        if @order.update(status: true)
+        if @order.update(order_update_params)
           render json: @order, status: :ok
         else
           render json: { errors: @order.errors.full_messages }, status: :unprocessable_entity
@@ -59,11 +59,18 @@ module Api
         @order = current_api_v1_user.orders.find(params[:id])
       end
 
-      # ストロングパラメータ
+      # ストロングパラメータ（注文作成用）
       # ・リクエストボディの order 以下にある dish_id と quantity のみを許可
       # ・quantity は現状デフォルトで 1 固定想定だが、後々拡張の余地を残している
       def order_params
         params.require(:order).permit(:dish_id, :quantity)
+      end
+
+      # ストロングパラメータ（注文更新用）
+      # ・リクエストボディの order 以下にある status のみを許可
+      # ・enumで定義されたステータス値のみが受け入れられる
+      def order_update_params
+        params.require(:order).permit(:status)
       end
     end
   end

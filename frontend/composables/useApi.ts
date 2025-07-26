@@ -13,47 +13,51 @@ export const useApi = <T = unknown>(
   const base = useRuntimeConfig().public.apiBase
   const url = `${base}${path}`
 
-  // DeviseTokenAuthで必要な認証ヘッダーを取得
-  // 各リクエストでトークンを送信し、レスポンスで更新されたトークンを受け取る
-  const accessToken = useCookie('access-token')
-  const client = useCookie('client')
-  const uid = useCookie('uid')
+  // useAuthから認証関連の機能を取得
+  const { accessToken, client, uid, updateAuthHeaders, clearAuth } = useAuth()
 
-  const authHeaders: Record<string, string> = {}
-  if (accessToken.value) authHeaders['access-token'] = accessToken.value
-  if (client.value) authHeaders['client'] = client.value
-  if (uid.value) authHeaders['uid'] = uid.value
-
-  // useFetchに適合する型に変換
-  const { data, error, refresh } = useFetch<T>(url, {
+  // useFetchに適合する型に変換し、トークンローテーション対応を実装
+  const { data, error, refresh, pending } = useFetch<T>(url, {
     method: options.method as any, // NuxtのuseFetchのmethod型は複雑なため型アサーション
     body: options.body as any, // bodyの型はAPIによって可変のため型アサーション
     query: options.query,
     headers: {
-      ...authHeaders,
+      // API専用フォーマットを明示してDeviseのセッション使用を防ぐ
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      // DeviseTokenAuthで必要な認証ヘッダーを自動付与
+      ...(accessToken.value && { 'access-token': accessToken.value }),
+      ...(client.value && { client: client.value }),
+      ...(uid.value && { uid: uid.value }),
+      // ユーザー指定のヘッダーも含める（Accept/Content-Typeは上書き可能）
       ...(options.headers || {}),
     },
+    onRequest({ options: requestOptions }) {
+      // リクエスト直前に最新の認証トークンを確実に設定
+      // これによりトークンが更新されていた場合も確実に反映される
+      if (accessToken.value && client.value && uid.value) {
+        requestOptions.headers = new Headers(requestOptions.headers)
+        requestOptions.headers.set('access-token', accessToken.value)
+        requestOptions.headers.set('client', client.value)
+        requestOptions.headers.set('uid', uid.value)
+      }
+    },
     onResponse({ response }) {
-      // DeviseTokenAuthはリクエストごとにトークンを更新するため
-      // レスポンスヘッダーから新しい認証トークンを取得・保存
-      const access = response.headers.get('access-token')
-      const clientValue = response.headers.get('client')
-      const uidValue = response.headers.get('uid')
-
-      if (access) accessToken.value = access
-      if (clientValue) client.value = clientValue
-      if (uidValue) uid.value = uidValue
+      // DeviseTokenAuthのトークンローテーション対応
+      // 成功時のレスポンスヘッダーから新しい認証トークンを取得・更新
+      if (response.headers.has('access-token')) {
+        updateAuthHeaders(response.headers)
+      }
     },
     onResponseError({ response }) {
       // 401 Unauthorizedの場合は認証が無効になったと判断
       // 認証情報をクリアしてログイン画面への遷移を促す
       if (response.status === 401) {
-        accessToken.value = null
-        client.value = null
-        uid.value = null
-        // ユーザー情報もクリア
-        const user = useState('user', () => null as unknown)
-        user.value = null
+        clearAuth()
+        // クライアントサイドでのみリダイレクト実行
+        if (import.meta.client) {
+          navigateTo('/login')
+        }
       }
     },
   })
@@ -62,5 +66,5 @@ export const useApi = <T = unknown>(
     console.error('API error:', error.value)
   }
 
-  return { data, error, refresh }
+  return { data, error, refresh, pending }
 }

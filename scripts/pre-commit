@@ -28,6 +28,7 @@ if [ "${#staged_ruby[@]}" -gt 0 ]; then
   # 変更されたファイルを再ステージ
   git add "${staged_ruby[@]}"
   git stash pop --quiet || true
+  sleep 0.1
 fi
 
 ### Frontend: ESLint & Prettier（バッチ処理）
@@ -46,6 +47,7 @@ if [ "${#staged_js[@]}" -gt 0 ]; then
 
   git add "${staged_js[@]}"
   git stash pop --quiet || true
+  sleep 0.1
 fi
 
 echo "→ [pre-commit] All done."

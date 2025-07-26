@@ -19,8 +19,11 @@ const {
  * @param id - 更新する注文のID
  */
 const onComplete = async (id: number) => {
-  // PATCHリクエストで注文ステータスを更新
-  await useApi(`/api/v1/orders/${id}`, { method: 'PATCH', body: {} })
+  // PATCHリクエストで注文ステータスを'completed'に更新
+  await useApi(`/api/v1/orders/${id}`, {
+    method: 'PATCH',
+    body: { status: 'completed' },
+  })
 
   // location.reload()の代わりに、useApiが提供するrefresh関数を呼ぶ
   // これにより、ページ全体をリロードせずにデータのみを効率的に再取得できる

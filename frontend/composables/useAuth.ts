@@ -167,14 +167,39 @@ export const useAuth = () => {
     }
   }
 
+  /**
+   * レスポンスヘッダーから認証トークンを更新（DeviseTokenAuthのトークンローテーション対応）
+   * @param {Headers} headers - レスポンスヘッダー
+   */
+  function updateAuthHeaders(headers: Headers) {
+    const newAccessToken = headers.get('access-token')
+    const newClient = headers.get('client')
+    const newUid = headers.get('uid')
+
+    // DeviseTokenAuthは成功時に新しいaccess-tokenを返すため、空文字でない場合のみ更新
+    if (newAccessToken && newAccessToken !== '') {
+      accessToken.value = newAccessToken
+    }
+    if (newClient && newClient !== '') {
+      client.value = newClient
+    }
+    if (newUid && newUid !== '') {
+      uid.value = newUid
+    }
+  }
+
   return {
     user,
     isLoggedIn,
     errorMsg,
+    accessToken,
+    client,
+    uid,
     login,
     logout,
     fetchUser,
     saveHeaders,
+    updateAuthHeaders,
     clearAuth,
   }
 }

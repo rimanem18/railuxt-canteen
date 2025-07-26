@@ -261,7 +261,9 @@ Devise.setup do |config|
   # should add them to the navigational formats lists.
   #
   # The "*/*" below is required to match Internet Explorer requests.
-  # config.navigational_formats = ['*/*', :html, :turbo_stream]
+  # API専用アプリケーションのため、navigational_formatsを空配列に設定
+  # これによりDeviseはすべてのリクエストを非ナビゲーショナル（JSON API）として扱う
+  config.navigational_formats = []
 
   # The default HTTP method used to sign out a resource. Default is :delete.
   config.sign_out_via = :delete

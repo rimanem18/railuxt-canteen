@@ -144,8 +144,8 @@ docker compose exec web npm run build
   - 実装を更新したらテストコードも更新
   - テストコードに記載するテストケース名は日本語で記載
 - **必須**: ファイルの末尾には改行を入れて空行を作る
-- **必須**: `docker compose exec web npm run format` による自動修正
 - **必須**: `docker compose exec web npx tsc --noEmit` による型チェック
+- **必須**: `docker compose exec web npm run test` による自動テスト
 - **推奨**: 1 行あたりの文字数は 80 字以内になるように改行
 - **推奨**: `const` の使用
 - **非推奨**: テストでのモックの乱用

@@ -4,8 +4,8 @@
  */
 
 import type { ZodSchema, ZodType } from 'zod'
+import type { FetchOptions } from '../types/api'
 import type { UseFetchOptions } from '#app'
-import type { FetchOptions } from '~/types/api'
 
 /**
  * 型付きAPI呼び出しを行うコンポーザブル関数

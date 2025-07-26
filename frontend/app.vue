@@ -10,6 +10,10 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
+import { useAuth } from '~/features/auth'
+import NavBar from '~/shared/components/NavBar.vue'
+
 /**
  * メインアプリケーションコンポーネント（Container component）
  * 認証状態を管理し、子コンポーネントに props として渡す

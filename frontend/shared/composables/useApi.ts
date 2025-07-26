@@ -1,4 +1,5 @@
-import type { UseApiOptions } from '~/types/useApi'
+import type { UseApiOptions } from '../types/api'
+import { useAuth } from '~/features/auth'
 
 /**
  * API呼び出しを行うコンポーザブル関数

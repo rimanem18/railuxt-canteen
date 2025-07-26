@@ -18,15 +18,7 @@
 </template>
 
 <script setup lang="ts">
-/** 料理の型定義 */
-interface Dish {
-  /** 料理ID */
-  id: number
-  /** 料理名 */
-  name: string
-  /** 価格（円） */
-  price: number
-}
+import type { Dish } from '../types/index'
 
 /** 料理カードを表示するコンポーネント */
 defineProps<{

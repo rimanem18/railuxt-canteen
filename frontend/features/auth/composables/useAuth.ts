@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import type { User, AuthResponse, AuthValidateResponse } from '~/types/schemas'
+import type { User, AuthResponse, AuthValidateResponse } from '../types/index'
 
 /**
  * 認証機能を提供するコンポーザブル関数

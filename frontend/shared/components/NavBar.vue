@@ -57,7 +57,7 @@
  * 認証状態をpropsとして受け取り、イベントを親コンポーネントに通知する
  */
 
-import type { User } from '~/types/schemas'
+import type { User } from '../../features/auth/types/index'
 
 interface Props {
   /** 現在のユーザー情報 */

@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Order } from '~/types/schemas'
+import type { Order } from '../types/index'
 
 /** 注文一覧を表示するコンポーネント */
 defineProps<{

@@ -5,9 +5,9 @@
 class Order < ApplicationRecord
   # 有効な遷移パターンを定義
   VALID_STATUS_TRANSITIONS = {
-    'pending' => %w[confirmed cancelled],
-    'confirmed' => %w[preparing cancelled],
-    'preparing' => %w[ready cancelled],
+    'pending' => %w[confirmed completed cancelled],
+    'confirmed' => %w[preparing completed cancelled],
+    'preparing' => %w[ready completed cancelled],
     'ready' => %w[completed],
     'completed' => [],  # 完了後は変更不可
     'cancelled' => []   # キャンセル後は変更不可

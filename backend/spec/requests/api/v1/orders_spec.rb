@@ -184,11 +184,11 @@ RSpec.describe 'Api::V1::Orders', type: :request do
       end
 
       it '無効なステータス遷移が拒否されること' do
-        order = create(:order, user: user, dish: dish, quantity: 1, status: :pending)
+        order = create(:order, user: user, dish: dish, quantity: 1, status: :completed)
 
-        # pending -> completed（無効な遷移 - prepareingをスキップ）
+        # completed -> pending（無効な遷移 - 完了済みからは戻れない）
         patch api_v1_order_path(order),
-              params: { order: { status: 'completed' } },
+              params: { order: { status: 'pending' } },
               headers: auth_headers
         expect(response).to have_http_status(:unprocessable_entity)
 
@@ -196,7 +196,7 @@ RSpec.describe 'Api::V1::Orders', type: :request do
         expect(json_response['errors']).to be_present, 'Should return validation errors'
 
         order.reload
-        expect(order.status).to eq('pending'), 'Status should not change on invalid transition'
+        expect(order.status).to eq('completed'), 'Status should not change on invalid transition'
       end
 
       it '完了済み注文のステータス変更が禁止されること' do

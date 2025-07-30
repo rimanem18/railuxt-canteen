@@ -91,21 +91,66 @@ export const useOrderHistory = (filters: Ref<OrderFilters> = ref({})) => {
    * 注文のステータスを更新する
    * @param orderId - 注文ID
    * @param status - 新しいステータス
+   * @throws エラー発生時は例外をスローし、呼び出し元でハンドリング
    */
   const updateOrderStatus = async (orderId: number, status: string) => {
-    await $fetch(`${base}/api/v1/orders/${orderId}`, {
-      method: 'PATCH',
-      body: { order: { status } },
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        ...(accessToken.value && { 'access-token': accessToken.value }),
-        ...(client.value && { client: client.value }),
-        ...(uid.value && { uid: uid.value }),
-      },
-    })
-    // データを再取得して最新状態に同期
-    await refetch()
+    try {
+      // 認証情報の存在確認
+      if (!accessToken.value || !client.value || !uid.value) {
+        throw new Error('認証情報が不足しています。再ログインしてください。')
+      }
+
+      // 注文ID の妥当性確認
+      if (!orderId || orderId <= 0) {
+        throw new Error('無効な注文IDです。')
+      }
+
+      // ステータスの妥当性確認
+      const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled']
+      if (!status || !validStatuses.includes(status)) {
+        throw new Error(`無効なステータスです: ${status}`)
+      }
+
+      await $fetch(`${base}/api/v1/orders/${orderId}`, {
+        method: 'PATCH',
+        body: { order: { status } },
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'access-token': accessToken.value,
+          'client': client.value,
+          'uid': uid.value,
+        },
+      })
+
+      // データを再取得して最新状態に同期
+      await refetch()
+    }
+    catch (error: any) {
+      // エラーの種類に応じて適切なメッセージを設定
+      if (error.status === 401) {
+        throw new Error('認証が無効です。再ログインしてください。')
+      }
+      else if (error.status === 403) {
+        throw new Error('この操作を実行する権限がありません。')
+      }
+      else if (error.status === 404) {
+        throw new Error('指定された注文が見つかりません。')
+      }
+      else if (error.status === 422) {
+        throw new Error('無効なデータです。入力内容を確認してください。')
+      }
+      else if (error.status >= 500) {
+        throw new Error('サーバーエラーが発生しました。しばらく経ってから再試行してください。')
+      }
+      else if (!navigator.onLine) {
+        throw new Error('インターネット接続を確認してください。')
+      }
+      else {
+        // 予期しないエラーの場合
+        throw new Error(error.message || '注文の更新に失敗しました。')
+      }
+    }
   }
 
   return {

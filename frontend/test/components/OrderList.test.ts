@@ -76,10 +76,10 @@ describe('OrderList.vue', () => {
       },
     })
 
-    // 提供済みマークが表示されているかチェック
-    const completedText = wrapper.find('span.text-gray-500')
-    expect(completedText.exists()).toBe(true)
-    expect(completedText.text()).toBe('(提供済み)')
+    // 提供済みステータスが表示されているかチェック
+    const statusText = wrapper.find('span.bg-gray-100')
+    expect(statusText.exists()).toBe(true)
+    expect(statusText.text()).toBe('提供済み')
 
     // 提供済みボタンが表示されていないことをチェック
     const completeButton = wrapper.find('button.bg-green-500')
@@ -146,10 +146,10 @@ describe('OrderList.vue', () => {
     const completeButton = wrapper.find('button.bg-green-500')
     await completeButton.trigger('click')
 
-    // completeイベントが発火されたかチェック
-    expect(wrapper.emitted('complete')).toBeTruthy()
-    expect(wrapper.emitted('complete')).toHaveLength(1)
-    expect(wrapper.emitted('complete')![0]).toEqual([1])
+    // updateStatusイベントが発火されたかチェック
+    expect(wrapper.emitted('updateStatus')).toBeTruthy()
+    expect(wrapper.emitted('updateStatus')).toHaveLength(1)
+    expect(wrapper.emitted('updateStatus')![0]).toEqual([1, 'completed'])
   })
 
   it('複数の注文が混在している場合の表示が正しい', () => {
@@ -194,7 +194,7 @@ describe('OrderList.vue', () => {
 
     // 提供済み注文の確認
     expect(wrapper.text()).toContain('カレーライス')
-    expect(wrapper.text()).toContain('(提供済み)')
+    expect(wrapper.text()).toContain('提供済み')
 
     // 未提供注文の確認
     expect(wrapper.text()).toContain('ラーメン')

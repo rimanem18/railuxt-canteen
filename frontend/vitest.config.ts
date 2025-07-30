@@ -8,11 +8,17 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./test/setup.ts'],
+    // vue-queryの非同期処理に対応するためのタイムアウト拡張
+    testTimeout: 10000,
   },
   resolve: {
     alias: {
       '~': resolve(__dirname, '.'),
       '@': resolve(__dirname, '.'),
     },
+  },
+  // 依存関係の最適化設定
+  optimizeDeps: {
+    include: ['@tanstack/vue-query'],
   },
 })

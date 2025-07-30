@@ -29,8 +29,8 @@ init:
 	docker compose run --rm web bash -lc "npm ci"
 
 	# pre-commit フックを初回セットアップ
-	test -f .git/hooks/pre-commit || cp scripts/pre-commit .git/hooks/pre-commit
-	chmod +x .git/hooks/pre-commit
+# 	test -f .git/hooks/pre-commit || cp scripts/pre-commit .git/hooks/pre-commit
+# 	chmod +x .git/hooks/pre-commit
 
 	@echo "✨ init complete. 次は make up で起動してください"
 db-setup:

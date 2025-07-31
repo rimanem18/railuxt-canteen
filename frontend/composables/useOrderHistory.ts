@@ -106,7 +106,14 @@ export const useOrderHistory = (filters: Ref<OrderFilters> = ref({})) => {
       }
 
       // ステータスの妥当性確認
-      const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled']
+      const validStatuses = [
+        'pending',
+        'confirmed',
+        'preparing',
+        'ready',
+        'completed',
+        'cancelled',
+      ]
       if (!status || !validStatuses.includes(status)) {
         throw new Error(`無効なステータスです: ${status}`)
       }
@@ -141,7 +148,9 @@ export const useOrderHistory = (filters: Ref<OrderFilters> = ref({})) => {
         throw new Error('無効なデータです。入力内容を確認してください。')
       }
       else if (error.status >= 500) {
-        throw new Error('サーバーエラーが発生しました。しばらく経ってから再試行してください。')
+        throw new Error(
+          'サーバーエラーが発生しました。しばらく経ってから再試行してください。',
+        )
       }
       else if (!navigator.onLine) {
         throw new Error('インターネット接続を確認してください。')

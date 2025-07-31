@@ -94,18 +94,22 @@ export const handlers = [
 
     // ステータスフィルター
     if (status) {
-      filteredOrders = filteredOrders.filter(order => order.status === status)
+      filteredOrders = filteredOrders.filter(
+        order => order.status === status,
+      )
     }
 
     // 日付範囲フィルター
     if (startDate) {
       filteredOrders = filteredOrders.filter(
-        order => order.created_at && new Date(order.created_at) >= new Date(startDate),
+        order =>
+          order.created_at && new Date(order.created_at) >= new Date(startDate),
       )
     }
     if (endDate) {
       filteredOrders = filteredOrders.filter(
-        order => order.created_at && new Date(order.created_at) <= new Date(endDate),
+        order =>
+          order.created_at && new Date(order.created_at) <= new Date(endDate),
       )
     }
 
@@ -116,7 +120,10 @@ export const handlers = [
       startIndex = parseInt(cursor, 10)
     }
 
-    const paginatedOrders = filteredOrders.slice(startIndex, startIndex + pageSize)
+    const paginatedOrders = filteredOrders.slice(
+      startIndex,
+      startIndex + pageSize,
+    )
     const hasNextPage = startIndex + pageSize < filteredOrders.length
     const nextCursor = hasNextPage ? String(startIndex + pageSize) : undefined
 
@@ -130,31 +137,41 @@ export const handlers = [
    * 注文ステータス更新API
    * PATCH /api/v1/orders/:id
    */
-  http.patch('http://localhost:3001/api/v1/orders/:id', async ({ params, request }) => {
-    const orderId = parseInt(params.id as string, 10)
-    const body = await request.json() as { order: { status: string } }
+  http.patch(
+    'http://localhost:3001/api/v1/orders/:id',
+    async ({ params, request }) => {
+      const orderId = parseInt(params.id as string, 10)
+      const body = (await request.json()) as { order: { status: string } }
 
-    const orderIndex = mockOrders.findIndex(order => order.id === orderId)
-    if (orderIndex === -1) {
-      return new HttpResponse(null, { status: 404 })
-    }
-
-    // ステータスを更新
-    const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'] as const
-    type ValidStatus = typeof validStatuses[number]
-    if (validStatuses.includes(body.order.status as ValidStatus)) {
-      mockOrders[orderIndex] = {
-        ...mockOrders[orderIndex],
-        status: body.order.status as ValidStatus,
-        updated_at: new Date().toISOString(),
+      const orderIndex = mockOrders.findIndex(order => order.id === orderId)
+      if (orderIndex === -1) {
+        return new HttpResponse(null, { status: 404 })
       }
-    }
-    else {
-      return new HttpResponse(null, { status: 422 })
-    }
 
-    return HttpResponse.json(mockOrders[orderIndex])
-  }),
+      // ステータスを更新
+      const validStatuses = [
+        'pending',
+        'confirmed',
+        'preparing',
+        'ready',
+        'completed',
+        'cancelled',
+      ] as const
+      type ValidStatus = (typeof validStatuses)[number]
+      if (validStatuses.includes(body.order.status as ValidStatus)) {
+        mockOrders[orderIndex] = {
+          ...mockOrders[orderIndex],
+          status: body.order.status as ValidStatus,
+          updated_at: new Date().toISOString(),
+        }
+      }
+      else {
+        return new HttpResponse(null, { status: 422 })
+      }
+
+      return HttpResponse.json(mockOrders[orderIndex])
+    },
+  ),
 
   /**
    * 認証関連のモック

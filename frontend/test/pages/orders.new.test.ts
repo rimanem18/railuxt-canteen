@@ -48,7 +48,8 @@ vi.mock('~/composables/useOrderFilters', () => ({
 vi.mock('~/components/OrderList.vue', () => ({
   default: {
     name: 'OrderList',
-    template: '<div class="order-list-mock">OrderList: {{ orders.length }} orders</div>',
+    template:
+      '<div class="order-list-mock">OrderList: {{ orders.length }} orders</div>',
     props: ['orders'],
     emits: ['complete'],
   },
@@ -154,7 +155,8 @@ const createNewOrdersComponent = () => {
     },
     components: {
       OrderList: {
-        template: '<div class="order-list-stub">{{ orders.length }} orders</div>',
+        template:
+          '<div class="order-list-stub">{{ orders.length }} orders</div>',
         props: ['orders'],
         emits: ['complete'],
       },
@@ -450,7 +452,10 @@ describe('新しいorders.vue（useOrderHistory使用版）', () => {
       const completeButton = wrapper.find('.complete-btn')
       await completeButton.trigger('click')
 
-      expect(mockOrderHistory.updateOrderStatus).toHaveBeenCalledWith(1, 'completed')
+      expect(mockOrderHistory.updateOrderStatus).toHaveBeenCalledWith(
+        1,
+        'completed',
+      )
     })
   })
 

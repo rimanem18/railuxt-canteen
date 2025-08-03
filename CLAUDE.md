@@ -93,8 +93,9 @@ docker compose exec web npm run build
 - **必須**: テスト駆動開発
   - 実装を更新したらテストコードも更新
   - テストコードに記載するテストケース名は日本語で記載
+- **必須**: テストファイルで、`describe`, `it`, `vi`, `expect` が使われている場合、これらを `vitest` から import してください。
 - **必須**: ファイルの末尾には改行を入れて空行を作る
-- **必須**: `docker compose exec web npx tsc --noEmit` による型チェック
+- **必須**: `docker compose exec web npx nuxi typecheck` による型チェック
 - **必須**: `docker compose exec web npm run test` による自動テスト
 - **推奨**: 1 行あたりの文字数は 80 字以内になるように改行
 - **推奨**: `const` の使用

@@ -1,14 +1,14 @@
 <template>
   <div class="flex items-center justify-between pt-3 border-t border-gray-100">
     <!-- 注文時刻 -->
-    <OrderTimestamp :created-at="order.created_at" />
+    <OrderTimestamp :created-at="order.created_at || ''" />
 
     <!-- アクションボタン -->
     <div class="flex items-center">
       <button
         v-if="order.status !== 'completed' && order.status !== 'cancelled'"
         class="inline-flex items-center px-4 py-2.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-semibold rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow"
-        :aria-label="`${order.dish.name}を提供済みにする`"
+        :aria-label="`${order.dish?.name || '料理'}を提供済みにする`"
         @click="$emit('updateStatus', order.id, 'completed')"
       >
         <svg

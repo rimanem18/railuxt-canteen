@@ -13,6 +13,7 @@ describe('OrderItem', () => {
     user_id: 10,
     dish_id: 5,
     quantity: 2,
+    total_price: 1600,
     status: 'pending',
     created_at: '2024-01-15T10:30:00Z',
     updated_at: '2024-01-15T10:30:00Z',
@@ -202,7 +203,7 @@ describe('OrderItem', () => {
     it('ユーザー情報がない注文を適切に表示する', () => {
       const orderWithoutUser: Order = {
         ...mockOrder,
-        user: null,
+        user: undefined,
       }
 
       const wrapper = mount(OrderItem, {

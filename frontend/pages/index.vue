@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { useQueryClient } from '@tanstack/vue-query'
 import DishCard from '~/components/DishCard.vue'
+import type { Dish } from '~/types/schemas'
 
-const { data: dishes } = await useApi('/api/v1/dishes')
+const { data: dishesResponse } = await useApi<{ data: Dish[] }>('/api/v1/dishes')
+const dishes = dishesResponse.value?.data || []
 const queryClient = useQueryClient()
 
 /**

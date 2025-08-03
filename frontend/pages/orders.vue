@@ -80,7 +80,7 @@ const dismissUpdateError = () => {
     <!-- 2. データ取得エラーの表示 -->
     <ErrorDisplay
       v-if="isError"
-      :error="{ message: 'データの取得に失敗しました', details: error }"
+      :error="{ message: 'データの取得に失敗しました', details: error?.message || 'エラーが発生しました' }"
       variant="error"
       :dismissible="false"
     />
@@ -119,7 +119,7 @@ const dismissUpdateError = () => {
     <button
       v-if="hasNextPage && !isFetchingNextPage"
       class="w-full p-4 bg-blue-500 text-white rounded hover:bg-blue-600"
-      @click="fetchNextPage"
+      @click="() => fetchNextPage()"
     >
       さらに読み込む
     </button>

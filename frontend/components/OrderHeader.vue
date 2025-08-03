@@ -5,7 +5,7 @@
       <!-- 料理名と数量（プライマリ情報） -->
       <div class="flex items-baseline gap-3 mb-3">
         <h3 class="text-xl font-bold text-gray-900 truncate leading-tight">
-          {{ order.dish.name }}
+          {{ order.dish?.name || '料理名不明' }}
         </h3>
         <span
           class="inline-flex items-center px-2 py-0.5 rounded-md text-sm font-semibold bg-blue-50 text-blue-700 whitespace-nowrap"

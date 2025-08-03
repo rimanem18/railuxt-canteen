@@ -13,6 +13,7 @@ describe('OrderHeader', () => {
     user_id: 10,
     dish_id: 5,
     quantity: 2,
+    total_price: 1600,
     status: 'pending',
     created_at: '2024-01-15T10:30:00Z',
     updated_at: '2024-01-15T10:30:00Z',
@@ -89,7 +90,7 @@ describe('OrderHeader', () => {
     it('注文者がnullの場合は注文者情報を表示しない', () => {
       const orderWithoutUser: Order = {
         ...mockOrder,
-        user: null,
+        user: undefined,
       }
 
       const wrapper = mount(OrderHeader, {

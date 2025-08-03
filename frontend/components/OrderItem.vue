@@ -1,7 +1,7 @@
 <template>
   <li
     class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 transition-all duration-200 hover:shadow-lg hover:border-gray-200 hover:-translate-y-0.5 focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2"
-    :aria-label="`${order.dish.name}の注文`"
+    :aria-label="`${order.dish?.name || '料理'}の注文`"
     tabindex="0"
     role="article"
   >

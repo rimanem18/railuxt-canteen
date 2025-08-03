@@ -144,8 +144,8 @@ describe('NavBar.vue', () => {
     expect(wrapper.emitted('logout')).toHaveLength(1)
   })
 
-  it('ユーザー名がnullの場合でも正しく表示される', () => {
-    const mockUserData = { id: 1, name: null, email: 'test@example.com' }
+  it('ユーザー名が空文字の場合でも正しく表示される', () => {
+    const mockUserData = { id: 1, name: '', email: 'test@example.com' }
 
     const wrapper = mount(NavBar, {
       props: {

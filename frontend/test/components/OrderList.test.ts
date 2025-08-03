@@ -49,8 +49,8 @@ describe('OrderList.vue', () => {
       },
     })
 
-    // リスト構造は存在するが、アイテムは存在しない
-    expect(wrapper.find('ul').exists()).toBe(true)
+    // 空状態の場合はリスト構造は存在せず、空状態コンポーネントが表示される
+    expect(wrapper.find('ul').exists()).toBe(false)
     expect(wrapper.find('li').exists()).toBe(false)
 
     // 空状態メッセージが表示される

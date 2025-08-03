@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { useFormatDateTime } from './useFormatDateTime'
+import { useFormatDateTime } from '~/composables/useFormatDateTime'
 
 describe('useFormatDateTime', () => {
   describe('基本的な無効値処理', () => {

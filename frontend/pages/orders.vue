@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import OrderList from '~/components/OrderList.vue'
+import ErrorDisplay from '~/components/ErrorDisplay.vue'
 
 // 認証ミドルウェアを適用
 definePageMeta({
@@ -21,8 +22,8 @@ const {
   updateOrderStatus,
 } = useOrderHistory(filters)
 
-// エラー状態管理
-const updateError = ref<string | null>(null)
+// エラー状態管理（ErrorDisplayコンポーネント用に構造化）
+const updateError = ref<{ message: string, details?: string } | null>(null)
 const isUpdating = ref<Set<number>>(new Set())
 
 /**
@@ -43,8 +44,11 @@ const onUpdateStatus = async (id: number, newStatus: string) => {
     await updateOrderStatus(id, newStatus)
   }
   catch (error: any) {
-    // エラーメッセージを設定
-    updateError.value = error.message || '注文の更新に失敗しました'
+    // エラー情報を構造化してErrorDisplayコンポーネントで表示
+    updateError.value = {
+      message: '注文の更新に失敗しました',
+      details: error.message || '不明なエラーが発生しました',
+    }
 
     // コンソールにもエラーログを出力（開発・デバッグ用）
     console.error('注文ステータス更新エラー:', error)
@@ -53,6 +57,13 @@ const onUpdateStatus = async (id: number, newStatus: string) => {
     // 更新中状態を解除
     isUpdating.value.delete(id)
   }
+}
+
+/**
+ * エラーメッセージを閉じる
+ */
+const dismissUpdateError = () => {
+  updateError.value = null
 }
 </script>
 
@@ -66,32 +77,20 @@ const onUpdateStatus = async (id: number, newStatus: string) => {
       読み込み中...
     </div>
 
-    <!-- 2. エラー発生時の表示 -->
-    <div
-      v-else-if="isError"
-      class="text-center p-4 text-red-600"
-    >
-      エラーが発生しました。
-      <div class="mt-2 text-sm text-red-500">
-        {{ error }}
-      </div>
-    </div>
+    <!-- 2. データ取得エラーの表示 -->
+    <ErrorDisplay
+      v-if="isError"
+      :error="{ message: 'データの取得に失敗しました', details: error }"
+      variant="error"
+      :dismissible="false"
+    />
 
     <!-- 3. 更新エラー表示 -->
-    <div
-      v-if="updateError"
-      class="mb-4 p-4 bg-red-100 border border-red-300 text-red-700 rounded"
-    >
-      <div class="flex items-center justify-between">
-        <span>{{ updateError }}</span>
-        <button
-          class="ml-2 text-red-500 hover:text-red-700"
-          @click="updateError = null"
-        >
-          ×
-        </button>
-      </div>
-    </div>
+    <ErrorDisplay
+      :error="updateError"
+      variant="error"
+      @dismiss="dismissUpdateError"
+    />
 
     <!-- 4. フィルター表示（将来的に追加予定のUI） -->
     <div
@@ -101,21 +100,12 @@ const onUpdateStatus = async (id: number, newStatus: string) => {
       フィルターが適用されています
     </div>
 
-    <!-- 5. 正常にデータが取得できた場合の表示 -->
+    <!-- 5. 正常にデータが取得できた場合の表示（空状態もOrderListが担当） -->
     <OrderList
-      v-if="orders.length > 0"
+      v-if="!isLoading && !isError"
       :orders="orders"
-      :updating-orders="Array.from(isUpdating)"
       @update-status="onUpdateStatus"
     />
-
-    <!-- 6. データが空の場合の表示 -->
-    <div
-      v-else-if="!isLoading && !isError"
-      class="text-center p-4 text-gray-600"
-    >
-      注文はありません。
-    </div>
 
     <!-- 7. 無限スクロール用のローディング -->
     <div

@@ -275,12 +275,12 @@ describe('OrderList.vue', () => {
     })
 
     // 料理名が太字で表示される
-    const dishName = wrapper.find('h3.font-semibold')
+    const dishName = wrapper.find('h3.font-bold')
     expect(dishName.exists()).toBe(true)
     expect(dishName.text()).toBe('特製ハンバーグ定食')
 
-    // 数量がグレーのテキストで表示される
-    const quantity = wrapper.find('span.text-gray-600')
+    // 数量がバッジで表示される
+    const quantity = wrapper.find('span.bg-blue-50')
     expect(quantity.exists()).toBe(true)
     expect(quantity.text()).toBe('× 5')
   })
@@ -345,5 +345,105 @@ describe('OrderList.vue', () => {
     const timeText = wrapper.find('time')
     expect(timeText.exists()).toBe(true)
     expect(timeText.text()).toBe('-')
+  })
+
+  it('注文者の名前が表示される', () => {
+    const mockOrders: Order[] = [
+      {
+        id: 1,
+        user_id: 1,
+        dish_id: 1,
+        quantity: 1,
+        total_price: 500,
+        status: 'pending',
+        created_at: '2024-07-31T14:00:00.000Z',
+        dish: {
+          id: 1,
+          name: 'カレーライス',
+          price: 500,
+        },
+        user: {
+          id: 1,
+          name: '注文太郎',
+          email: 'test@example.com',
+        },
+      },
+    ]
+
+    const wrapper = mount(OrderList, {
+      props: {
+        orders: mockOrders,
+      },
+    })
+
+    // 注文者名が表示されることを確認
+    const userNameElement = wrapper.find('[data-testid="order-user-name"]')
+    expect(userNameElement.exists()).toBe(true)
+    expect(userNameElement.text()).toContain('注文太郎')
+  })
+
+  it('ユーザー情報がない場合は注文者名が表示されない', () => {
+    const mockOrders: Order[] = [
+      {
+        id: 1,
+        user_id: 1,
+        dish_id: 1,
+        quantity: 1,
+        total_price: 500,
+        status: 'pending',
+        created_at: '2024-07-31T14:00:00.000Z',
+        dish: {
+          id: 1,
+          name: 'カレーライス',
+          price: 500,
+        },
+        // userプロパティなし
+      },
+    ]
+
+    const wrapper = mount(OrderList, {
+      props: {
+        orders: mockOrders,
+      },
+    })
+
+    // 注文者名要素が存在しないことを確認
+    const userNameElement = wrapper.find('[data-testid="order-user-name"]')
+    expect(userNameElement.exists()).toBe(false)
+  })
+
+  it('ユーザー名がない場合は「名前なし」と表示される', () => {
+    const mockOrders: Order[] = [
+      {
+        id: 1,
+        user_id: 1,
+        dish_id: 1,
+        quantity: 1,
+        total_price: 500,
+        status: 'pending',
+        created_at: '2024-07-31T14:00:00.000Z',
+        dish: {
+          id: 1,
+          name: 'カレーライス',
+          price: 500,
+        },
+        user: {
+          id: 1,
+          name: '', // 空の名前
+          email: 'test@example.com',
+        },
+      },
+    ]
+
+    const wrapper = mount(OrderList, {
+      props: {
+        orders: mockOrders,
+      },
+    })
+
+    // 「名前なし」が表示されることを確認
+    const userNameElement = wrapper.find('[data-testid="order-user-name"]')
+    expect(userNameElement.exists()).toBe(true)
+    expect(userNameElement.text()).toContain('名前なし')
   })
 })

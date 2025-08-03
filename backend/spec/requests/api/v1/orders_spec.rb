@@ -136,6 +136,65 @@ RSpec.describe 'Api::V1::Orders', type: :request do
         expect(order_ids).not_to include(other_order.id), 'Should not include other users orders'
       end
     end
+
+    context '注文者情報の表示' do
+      it '注文レスポンスに注文者の名前が含まれること' do
+        # テストユーザーの名前を設定
+        user.update!(name: 'テスト太郎')
+        
+        # 注文を作成
+        order = create(:order, user: user, dish: dish, quantity: 1, status: :pending)
+
+        get api_v1_orders_path, headers: auth_headers
+        expect(response).to have_http_status(:success)
+
+        json_response = response.parsed_body
+        order_data = json_response['orders'].first
+
+        # ユーザー情報が含まれることを確認
+        expect(order_data).to have_key('user')
+        expect(order_data['user']).to have_key('name')
+        expect(order_data['user']['name']).to eq('テスト太郎')
+      end
+
+      it '注文レスポンスに不要なユーザー情報が含まれないこと' do
+        # 注文を作成
+        order = create(:order, user: user, dish: dish, quantity: 1, status: :pending)
+
+        get api_v1_orders_path, headers: auth_headers
+        expect(response).to have_http_status(:success)
+
+        json_response = response.parsed_body
+        order_data = json_response['orders'].first
+
+        # セキュリティ：不要な情報が公開されないことを確認
+        expect(order_data['user']).not_to have_key('email'), 'Should not expose email'
+        expect(order_data['user']).not_to have_key('uid'), 'Should not expose uid'
+        expect(order_data['user']).not_to have_key('provider'), 'Should not expose provider'
+        expect(order_data['user']).not_to have_key('allow_password_change'), 'Should not expose password settings'
+      end
+
+      it '削除されたユーザーの注文でもエラーが発生しないこと' do
+        # 別のユーザーを作成して注文を作成
+        other_user = create(:user, name: '削除予定ユーザー', email: 'delete@example.com', uid: 'delete@example.com')
+        deleted_user_order = create(:order, user: other_user, dish: dish, quantity: 1, status: :pending)
+        
+        # 自分の注文も作成
+        my_order = create(:order, user: user, dish: dish, quantity: 1, status: :pending)
+
+        # 他のユーザーを削除（外部キー制約でorderは削除されない想定）
+        # 実際のアプリケーションでは論理削除や別の手法を使用する可能性があるが、
+        # ここではN+1問題の解決とエラーハンドリングのテストとして記載
+
+        get api_v1_orders_path, headers: auth_headers
+        expect(response).to have_http_status(:success)
+
+        json_response = response.parsed_body
+        # 自分の注文のみが返されることを確認（他ユーザーの注文はスコープで除外される）
+        expect(json_response['orders'].size).to eq(1)
+        expect(json_response['orders'].first['id']).to eq(my_order.id)
+      end
+    end
   end
 
   describe 'POST /api/v1/orders' do

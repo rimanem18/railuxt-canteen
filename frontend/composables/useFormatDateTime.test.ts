@@ -193,4 +193,53 @@ describe('useFormatDateTime', () => {
       expect(result).toBe('-') // 無効な日付なので'-'が返される
     })
   })
+
+  describe('完全日時フォーマット', () => {
+    it('有効な日時を渡した場合、正しい完全フォーマットを返すこと', () => {
+      const { formatFullDateTime } = useFormatDateTime()
+      const result = formatFullDateTime('2023-12-25T15:30:00.000Z')
+      expect(result).toBe('2023年12月25日(月) 15:30')
+    })
+
+    it('うるう年の日付を正しく処理できること', () => {
+      const { formatFullDateTime } = useFormatDateTime()
+      const result = formatFullDateTime('2024-02-29T09:15:00.000Z')
+      expect(result).toBe('2024年2月29日(木) 09:15')
+    })
+
+    it('undefinedを渡した場合、"-"を返すこと', () => {
+      const { formatFullDateTime } = useFormatDateTime()
+      const result = formatFullDateTime(undefined)
+      expect(result).toBe('-')
+    })
+
+    it('空文字列を渡した場合、"-"を返すこと', () => {
+      const { formatFullDateTime } = useFormatDateTime()
+      const result = formatFullDateTime('')
+      expect(result).toBe('-')
+    })
+
+    it('不正な日付文字列を渡した場合、"-"を返すこと', () => {
+      const { formatFullDateTime } = useFormatDateTime()
+      const result = formatFullDateTime('invalid-date')
+      expect(result).toBe('-')
+    })
+
+    it('曜日が正しく表示されること', () => {
+      const { formatFullDateTime } = useFormatDateTime()
+      // 2023年12月24日は日曜日
+      const sunday = formatFullDateTime('2023-12-24T12:00:00.000Z')
+      expect(sunday).toBe('2023年12月24日(日) 12:00')
+
+      // 2023年12月30日は土曜日
+      const saturday = formatFullDateTime('2023-12-30T18:45:00.000Z')
+      expect(saturday).toBe('2023年12月30日(土) 18:45')
+    })
+
+    it('時刻が2桁でパディングされること', () => {
+      const { formatFullDateTime } = useFormatDateTime()
+      const result = formatFullDateTime('2023-01-05T03:07:00.000Z')
+      expect(result).toBe('2023年1月5日(木) 03:07')
+    })
+  })
 })

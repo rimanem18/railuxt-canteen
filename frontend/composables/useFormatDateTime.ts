@@ -113,7 +113,35 @@ export const useFormatDateTime = () => {
     return `${year}年${month}月${day}日`
   }
 
+  /**
+   * 完全な日時フォーマットを取得する（tooltip用等）
+   * @param dateString - ISO文字列形式の日時、またはundefined
+   * @returns 完全フォーマットされた日時文字列 (YYYY年M月D日(曜日) HH:MM形式)
+   */
+  const formatFullDateTime = (dateString: string | undefined): string => {
+    if (!dateString || dateString === '') {
+      return '-'
+    }
+
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) {
+      return '-'
+    }
+
+    // YYYY年M月D日(曜日) HH:MM形式で返す
+    const weekdays = ['日', '月', '火', '水', '木', '金', '土']
+    const year = date.getFullYear()
+    const month = date.getMonth() + 1
+    const day = date.getDate()
+    const weekday = weekdays[date.getDay()]
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+
+    return `${year}年${month}月${day}日(${weekday}) ${hours}:${minutes}`
+  }
+
   return {
     formatRelativeTime,
+    formatFullDateTime,
   }
 }

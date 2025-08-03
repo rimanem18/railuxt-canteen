@@ -71,6 +71,24 @@ class Order < ApplicationRecord
     scope
   }
 
+  # API レスポンス用のシリアライズメソッド
+  # ユーザー情報と料理情報を含む注文データを JSON 形式で返す
+  # セキュリティのため、必要最小限のフィールドのみを公開
+  # 
+  # 公開フィールド:
+  # - Order: id, user_id, quantity, status, created_at（機密情報は含まない）
+  # - User: id, name（メールアドレス等の機密情報は除外）
+  # - Dish: id, name, price（一般公開情報のみ）
+  def as_json_for_api(options = {})
+    as_json(
+      include: {
+        dish: { only: [:id, :name, :price] },
+        user: { only: [:id, :name] }
+      },
+      only: [:id, :user_id, :quantity, :status, :created_at]
+    )
+  end
+
   private
 
   # ステータス遷移の妥当性をチェック

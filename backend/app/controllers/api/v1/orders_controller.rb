@@ -21,7 +21,7 @@ module Api
         next_cursor = calculate_next_cursor(orders, limit)
 
         render json: {
-          orders: serialize_orders(orders),
+          orders: orders.map(&:as_json_for_api),
           next_cursor: next_cursor
         }.compact, status: :ok
       end
@@ -87,18 +87,10 @@ module Api
         orders.last&.created_at&.iso8601
       end
 
-      # 注文データを JSON シリアライズ用にフォーマット
-      def serialize_orders(orders)
-        orders.as_json(
-          include: { dish: { only: [:id, :name, :price] } },
-          only: [:id, :user_id, :quantity, :status, :created_at]
-        )
-      end
-
       # クエリビルダを使用して、注文の一覧を取得する
       def build_orders_query
         current_api_v1_user.orders
-                           .includes(:dish)
+                           .includes(:dish, :user)
                            .filter_by_status(params[:status])
                            .filter_by_date_range(params[:start_date], params[:end_date])
                            .page_by_cursor(params[:cursor])

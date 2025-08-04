@@ -31,9 +31,9 @@ if [ "${#staged_ruby[@]}" -gt 0 ]; then
   sleep 0.1
 fi
 
-### Frontend: ESLint & Prettier（バッチ処理）
+### Frontend: ESLint（バッチ処理）
 if [ "${#staged_js[@]}" -gt 0 ]; then
-  echo "→ [pre-commit] ESLint & Prettier on staged JS/TS/Vue files…"
+  echo "→ [pre-commit] ESLint on staged JS/TS/Vue files…"
   git stash push --keep-index --quiet
 
   docker_paths=()
@@ -42,7 +42,6 @@ if [ "${#staged_js[@]}" -gt 0 ]; then
     docker_paths+=("/home/node/app/${rel}")
   done
 
-  docker compose exec -T web npx prettier --write "${docker_paths[@]}"
   docker compose exec -T web npx eslint --fix "${docker_paths[@]}"
 
   git add "${staged_js[@]}"

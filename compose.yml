@@ -10,7 +10,8 @@ services:
     environment:
       RAILS_ENV: ${RAILS_ENV}
       DB_HOST: ${DB_HOST}
-      DB_NAME: ${DB_NAME}
+      DB_NAME_DEV: ${DB_NAME_DEV}
+      DB_NAME_TEST: ${DB_NAME_TEST}
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
     depends_on:
@@ -36,7 +37,7 @@ services:
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASS}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_DB: ${DB_NAME_DEV}
     volumes:
       - postgres-data:/var/lib/postgresql/data
 

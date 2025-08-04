@@ -11,14 +11,19 @@ module Api
       # 一覧表示アクション
       # GET /api/v1/orders
       def index
-        # ・現在のユーザーのOrderモデルのレコードを、作成日時の降順で取得する
-        # ・N+1問題を避けるために dish を includes で先読み込む
-        orders = current_api_v1_user.orders.includes(:dish).order(created_at: :desc)
-        # ・JSON レスポンスとして、order の属性と紐づく dish の id・name・price を返す
-        render json: orders.as_json(
-          include: { dish: { only: [:id, :name, :price] } },
-          only: [:id, :user_id, :quantity, :status, :created_at]
-        ), status: :ok
+        orders_query = build_orders_query
+
+        # ページネーション処理
+        limit = (params[:limit] || 10).to_i
+        orders = orders_query.limit(limit + 1).to_a
+
+        # 次のページ存在確認とカーソル生成
+        next_cursor = calculate_next_cursor(orders, limit)
+
+        render json: {
+          orders: orders.map(&:as_json_for_api),
+          next_cursor: next_cursor
+        }.compact, status: :ok
       end
 
       # 作成アクション
@@ -71,6 +76,25 @@ module Api
       # ・enumで定義されたステータス値のみが受け入れられる
       def order_update_params
         params.require(:order).permit(:status)
+      end
+
+      # 次のページのカーソルを計算する
+      def calculate_next_cursor(orders, limit)
+        has_next_page = orders.size > limit
+        return unless has_next_page
+
+        orders.pop # 余分な1件を削除
+        orders.last&.created_at&.iso8601
+      end
+
+      # クエリビルダを使用して、注文の一覧を取得する
+      def build_orders_query
+        current_api_v1_user.orders
+                           .includes(:dish, :user)
+                           .filter_by_status(params[:status])
+                           .filter_by_date_range(params[:start_date], params[:end_date])
+                           .page_by_cursor(params[:cursor])
+                           .order(created_at: :desc)
       end
     end
   end

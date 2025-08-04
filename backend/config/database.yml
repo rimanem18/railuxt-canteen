@@ -28,7 +28,7 @@ development:
   host: <%= ENV['DB_HOST']     || 'localhost' %>
   username: <%= ENV['DB_USER'] || 'postgres'  %>
   password: <%= ENV['DB_PASS'] %>
-  database: <%= ENV['DB_NAME'] || 'rails_api_dev' %>
+  database: <%= ENV['DB_NAME_DEV'] || 'rails_api_dev' %>
   pool: 5
 
   # The specified database role being used to connect to postgres.
@@ -61,9 +61,12 @@ development:
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
 # Do not set this db to the same as development or production.
-# test:
-#   <<: *default
-#   database: app_test
+test:
+  <<: *default
+  host: <%= ENV['DB_HOST'] || 'localhost' %>
+  username: <%= ENV['DB_USER'] || 'postgres' %>
+  password: <%= ENV['DB_PASS'] %>
+  database: <%= ENV['DB_NAME_TEST'] || 'rails_api_test' %>
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is

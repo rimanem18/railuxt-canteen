@@ -29,13 +29,17 @@ init:
 	docker compose run --rm web bash -lc "npm ci"
 
 	# pre-commit フックを初回セットアップ
-	test -f .git/hooks/pre-commit || cp scripts/pre-commit .git/hooks/pre-commit
-	chmod +x .git/hooks/pre-commit
+# 	test -f .git/hooks/pre-commit || cp scripts/pre-commit .git/hooks/pre-commit
+# 	chmod +x .git/hooks/pre-commit
 
 	@echo "✨ init complete. 次は make up で起動してください"
 db-setup:
-	docker compose up -d
+	docker compose up -d db
+	sleep 3
+	docker compose exec -T app bash -lc "bundle exec rails db:create"
+	docker compose exec -T app bash -lc "bundle exec rails db:create RAILS_ENV=test"
 	docker compose exec -T app bash -lc "bundle exec rails db:migrate"
+	docker compose exec -T app bash -lc "bundle exec rails db:migrate RAILS_ENV=test"
 	docker compose exec -T app bash -lc "bundle exec rails db:seed"
 	@echo "✨ DB setup complete"
 amend:

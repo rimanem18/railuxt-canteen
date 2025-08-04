@@ -1,5 +1,6 @@
-import { vi } from 'vitest'
+import { vi, beforeAll, afterAll, afterEach } from 'vitest'
 import type { Ref } from 'vue'
+import { startServer, stopServer, resetServerHandlers } from './mocks/server'
 
 // Nuxtコンポーザブルのグローバルモック設定
 // 型の競合を回避するため、直接プロパティを設定
@@ -49,7 +50,55 @@ globalThis.defineNuxtRouteMiddleware = vi.fn(
   <T extends (...args: unknown[]) => unknown>(fn: T): T => fn,
 )
 // @ts-expect-error - テスト環境でのNuxtコンポーザブルモック設定
-globalThis.useAuth = vi.fn()
+globalThis.useAuth = vi.fn(() => ({
+  accessToken: { value: 'mock-token' },
+  client: { value: 'mock-client' },
+  uid: { value: 'test@example.com' },
+}))
+
+// @ts-expect-error - Vue関数のグローバル設定
+globalThis.ref = vi.fn(value => ({
+  value,
+}))
+
+// @ts-expect-error - Vue関数のグローバル設定
+globalThis.computed = vi.fn(fn => ({
+  value: fn(),
+}))
+
+// @ts-expect-error - Vue関数のグローバル設定
+globalThis.readonly = vi.fn(obj => obj)
+
+// ルーターモック
+// @ts-expect-error - テスト環境でのNuxtコンポーザブルモック設定
+globalThis.useRoute = vi.fn(() => ({
+  query: {},
+  params: {},
+  path: '/orders',
+}))
+
+// @ts-expect-error - テスト環境でのNuxtコンポーザブルモック設定
+globalThis.useRouter = vi.fn(() => ({
+  push: vi.fn(),
+  replace: vi.fn(),
+  back: vi.fn(),
+}))
+
+/**
+ * MSWサーバーの設定
+ * テスト開始前にサーバーを起動し、終了後に停止
+ */
+beforeAll(() => {
+  startServer()
+})
+
+afterAll(() => {
+  stopServer()
+})
+
+afterEach(() => {
+  resetServerHandlers()
+})
 
 /**
  * コンソール出力をモック（テスト時のログ抑制）

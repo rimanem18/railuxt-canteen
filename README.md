@@ -15,13 +15,11 @@ rubocop に関しては、コンテナ起動時、 docker compose コマンド�
 
 dev container の用意などをせず、最悪 vscode とか関係なく動かせるようにするためです。実際の vscode での開発では、拡張機能の「Run on Save」を利用し、docker compose を毎回経由させています。
 
-pre-commit なども同様で、docker compose を経由し、ステージングされているファイル群をフォーマットさせています。
-
 ## 動かすには
 
 コンテナ起動後、 http://localhost:3000 にアクセスすると、注文画面が表示されます。
 
-![image](https://github.com/user-attachments/assets/0e61109b-b2e7-404f-92e4-85e8ac8615fa)
+<img width="1073" height="368" alt="Screenshot from 2025-08-04 23-07-14" src="https://github.com/user-attachments/assets/4d5733fe-920a-44e4-87ed-a5997d539e56" />
 
 ### 初回
 
@@ -44,10 +42,9 @@ make down
 ```
 
 ## 操作方法
+<img width="623" height="592" alt="Screenshot from 2025-08-04 23-10-21" src="https://github.com/user-attachments/assets/e71a535e-40cb-4a1f-a971-604875a1fc17" />
 
 「注文する」を押下すると、アラートが表示されて注文できます。
-
-![image](https://github.com/user-attachments/assets/90271467-e41b-44db-8a1b-77fc9f2b8f83)
 
 http://localhost:3000/orders に遷移すると、発注済みの注文がリストで表示されます。
 「提供済みにする」を押下すると、提供済みフラグが立ちます。

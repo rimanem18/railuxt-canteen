@@ -13,7 +13,9 @@ module Api
         # 全ての料理を取得
         # 将来的には営業時間や在庫状況による絞り込みが必要になる可能性がある
         dishes = Dish.all
-        render json: dishes, status: :ok
+        # フロントエンドとの API 仕様統一のため、data キーでラップして返却
+        # この形式により、将来的にメタデータ（ページネーション情報等）の追加が容易になる
+        render json: { data: dishes }, status: :ok
       end
     end
   end

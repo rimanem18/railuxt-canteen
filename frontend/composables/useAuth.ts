@@ -148,6 +148,76 @@ export const useAuth = () => {
   }
 
   /**
+   * デバッグログイン機能（開発・検証用）
+   * 既存のlogin関数と同じ認証フローを使用し、デバッグ用のログ出力を追加
+   * @param {string} email - メールアドレス
+   * @param {string} password - パスワード
+   * @returns {Promise<boolean>} ログイン成功時true、失敗時false
+   */
+  async function debugLogin(email: string, password: string) {
+    // デバッグログ: ログイン試行開始
+    console.log('[DEBUG LOGIN] Attempting login with:', {
+      email,
+      password: '***', // パスワードはセキュリティ上マスク
+    })
+
+    errorMsg.value = null
+    try {
+      const config = useRuntimeConfig()
+      const baseUrl = config.public.apiBase || ''
+      const response = await $fetch<AuthResponse>('/api/v1/auth/sign_in', {
+        method: 'POST',
+        baseURL: baseUrl,
+        headers: { 'Content-Type': 'application/json' },
+        body: { email, password },
+        onResponse({ response }) {
+          // デバッグログ: レスポンスヘッダー情報
+          console.log('[DEBUG LOGIN] API Response headers:', response.headers)
+          // トークンを保存
+          saveHeaders(response.headers)
+        },
+        onResponseError({ response }) {
+          // 既存のデバッグ用ログ出力を維持
+          console.error(
+            'Login error response:',
+            response.status,
+            response.statusText,
+          )
+          console.error('Response body:', response._data)
+        },
+      })
+
+      // ユーザー情報を取得
+      user.value = response.data
+
+      // デバッグログ: ログイン成功
+      console.log('[DEBUG LOGIN] Login successful for user:', response.data)
+
+      return true
+    }
+    catch (e: unknown) {
+      // デバッグログ: エラー詳細
+      console.error('[DEBUG LOGIN] Login failed with error:', e)
+
+      // 既存のエラーハンドリングロジックを維持
+      console.error('Login error:', e)
+      // エラーメッセージの優先順位：API側のエラー配列 > 通常のエラーメッセージ > デフォルトメッセージ
+      if (e && typeof e === 'object' && 'data' in e) {
+        const errorData = e.data as any
+        errorMsg.value = errorData?.errors?.join(', ') || 'ログイン失敗'
+      }
+      else if (e && typeof e === 'object' && 'message' in e) {
+        errorMsg.value = (e as { message: string }).message
+      }
+      else {
+        errorMsg.value = 'ログイン失敗'
+      }
+      clearAuth()
+      return false
+    }
+  }
+
+  /**
    * ログアウト処理
    * @returns {Promise<void>} ログアウト処理の完了を待つPromise
    */
@@ -196,6 +266,7 @@ export const useAuth = () => {
     client,
     uid,
     login,
+    debugLogin,
     logout,
     fetchUser,
     saveHeaders,

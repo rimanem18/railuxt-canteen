@@ -42,6 +42,37 @@ globalThis.useRuntimeConfig = vi.fn(() => ({
 }))
 
 // @ts-expect-error - テスト環境でのNuxtコンポーザブルモック設定
+globalThis.useNuxtApp = vi.fn(() => ({
+  $config: {
+    public: {
+      apiBase: 'http://localhost:3000',
+      isDev: true, // テスト環境では開発環境として扱う
+      testUsers: {
+        user1: {
+          name: 'ユーザー1',
+          email: 'user1@example.com',
+          password: 'railuxt01',
+        },
+        user2: {
+          name: 'ユーザー2',
+          email: 'user2@example.com',
+          password: 'railuxt02',
+        },
+      },
+    },
+  },
+  provide: vi.fn(),
+  hook: vi.fn(),
+  callHook: vi.fn(),
+  addHooks: vi.fn(),
+  hooks: {},
+  payload: {},
+  isHydrating: false,
+  deferHydration: vi.fn(),
+  ssrContext: undefined,
+}))
+
+// @ts-expect-error - テスト環境でのNuxtコンポーザブルモック設定
 globalThis.$fetch = vi.fn()
 // @ts-expect-error - テスト環境でのNuxtコンポーザブルモック設定
 globalThis.navigateTo = vi.fn()

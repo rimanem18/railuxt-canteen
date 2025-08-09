@@ -353,6 +353,160 @@ describe('useAuth', () => {
     })
   })
 
+  describe('debugLogin', () => {
+    it('デバッグログイン成功時にユーザー情報を更新し、trueを返す', async () => {
+      const mockUserData: User = {
+        id: 1,
+        name: 'Debug User',
+        email: 'debug@example.com',
+        image: null,
+        provider: 'email',
+        uid: 'debug@example.com',
+        allow_password_change: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+      const mockHeaders = new Headers()
+      mockHeaders.set('access-token', 'debug-token')
+      mockHeaders.set('client', 'debug-client')
+      mockHeaders.set('uid', 'debug-uid')
+
+      // console.logをスパイ
+      const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+      vi.mocked((globalThis as any).$fetch).mockImplementation(
+        (url: any, options?: any) => {
+          // onResponseコールバックを実行
+          if (options?.onResponse) {
+            options.onResponse({ response: { headers: mockHeaders } })
+          }
+          return Promise.resolve({ data: mockUserData })
+        },
+      )
+
+      const { debugLogin, user } = useAuth()
+      const result = await debugLogin('debug@example.com', 'password123')
+
+      // APIが正しく呼び出されたかチェック（既存のログイン機能と同じ）
+      expect(globalThis.$fetch).toHaveBeenCalledWith('/api/v1/auth/sign_in', {
+        method: 'POST',
+        baseURL: 'http://localhost:3000',
+        headers: { 'Content-Type': 'application/json' },
+        body: { email: 'debug@example.com', password: 'password123' },
+        onResponse: expect.any(Function),
+        onResponseError: expect.any(Function),
+      })
+
+      // デバッグログが出力されたかチェック
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        '[DEBUG LOGIN] Attempting login with:',
+        { email: 'debug@example.com', password: '***' },
+      )
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        '[DEBUG LOGIN] Login successful for user:',
+        mockUserData,
+      )
+
+      // ユーザー情報が正しく設定されたかチェック
+      expect(user.value).toEqual(mockUserData)
+      // 認証トークンが保存されたかチェック
+      expect(mockAccessToken.value).toBe('debug-token')
+      expect(mockClient.value).toBe('debug-client')
+      expect(mockUid.value).toBe('debug-uid')
+      // 戻り値がtrueであることをチェック
+      expect(result).toBe(true)
+
+      consoleLogSpy.mockRestore()
+    })
+
+    it('デバッグログイン失敗時にエラーログを出力し、falseを返す', async () => {
+      const mockError: MockError = {
+        data: { errors: ['Invalid debug credentials'] },
+        message: 'Debug login failed',
+      }
+
+      // console.logとconsole.errorをスパイ
+      const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+      vi.mocked((globalThis as any).$fetch).mockRejectedValue(mockError)
+
+      const { debugLogin, errorMsg } = useAuth()
+      const result = await debugLogin('debug@example.com', 'wrong-password')
+
+      // デバッグログが出力されたかチェック
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        '[DEBUG LOGIN] Attempting login with:',
+        { email: 'debug@example.com', password: '***' },
+      )
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '[DEBUG LOGIN] Login failed with error:',
+        mockError,
+      )
+
+      // エラーメッセージが正しく設定されたかチェック
+      expect(errorMsg.value).toBe('Invalid debug credentials')
+      // 戻り値がfalseであることをチェック
+      expect(result).toBe(false)
+      // 認証情報がクリアされたかチェック
+      expect(mockAccessToken.value).toBe(null)
+      expect(mockClient.value).toBe(null)
+      expect(mockUid.value).toBe(null)
+      expect(mockUser.value).toBe(null)
+
+      consoleLogSpy.mockRestore()
+      consoleErrorSpy.mockRestore()
+    })
+
+    it('デバッグモード専用のログ出力を行う', async () => {
+      const mockUserData: User = {
+        id: 1,
+        name: 'Test User',
+        email: 'test@example.com',
+        image: null,
+        provider: 'email',
+        uid: 'test@example.com',
+        allow_password_change: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+      const mockHeaders = new Headers()
+      mockHeaders.set('access-token', 'test-token')
+      mockHeaders.set('client', 'test-client')
+      mockHeaders.set('uid', 'test-uid')
+
+      const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+      vi.mocked((globalThis as any).$fetch).mockImplementation(
+        (url: any, options?: any) => {
+          if (options?.onResponse) {
+            options.onResponse({ response: { headers: mockHeaders } })
+          }
+          return Promise.resolve({ data: mockUserData })
+        },
+      )
+
+      const { debugLogin } = useAuth()
+      await debugLogin('test@example.com', 'password123')
+
+      // デバッグ専用のログ出力パターンを確認
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        '[DEBUG LOGIN] Attempting login with:',
+        { email: 'test@example.com', password: '***' },
+      )
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        '[DEBUG LOGIN] API Response headers:',
+        expect.any(Headers),
+      )
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        '[DEBUG LOGIN] Login successful for user:',
+        mockUserData,
+      )
+
+      consoleLogSpy.mockRestore()
+    })
+  })
+
   describe('clearAuth', () => {
     it('全ての認証情報をクリアする', () => {
       // 初期状態として認証情報を設定

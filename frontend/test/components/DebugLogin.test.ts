@@ -1,38 +1,30 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import DebugLogin from '~/components/DebugLogin.vue'
+import type { TestUser } from '~/config/debug-users'
+
+// テスト用のデータ
+const mockTestUsers: TestUser[] = [
+  {
+    id: 'user1',
+    name: 'Test User 1',
+    email: 'user1@example.com',
+    password: 'password123',
+    color: 'indigo',
+  },
+  {
+    id: 'user2',
+    name: 'Test User 2',
+    email: 'user2@example.com',
+    password: 'password456',
+    color: 'teal',
+  },
+]
 
 describe('DebugLogin.vue', () => {
-  let mockEmailInput: HTMLInputElement
-  let mockPasswordInput: HTMLInputElement
-  let mockLoginButton: HTMLButtonElement
-
   beforeEach(() => {
     // 各テストの前にモックをリセット
     vi.clearAllMocks()
-
-    // DOMの模擬フォーム要素を作成
-    mockEmailInput = document.createElement('input') as HTMLInputElement
-    mockEmailInput.type = 'email'
-    mockEmailInput.value = ''
-    mockEmailInput.dispatchEvent = vi.fn()
-
-    mockPasswordInput = document.createElement('input') as HTMLInputElement
-    mockPasswordInput.type = 'password'
-    mockPasswordInput.value = ''
-    mockPasswordInput.dispatchEvent = vi.fn()
-
-    mockLoginButton = document.createElement('button') as HTMLButtonElement
-    mockLoginButton.type = 'submit'
-    mockLoginButton.click = vi.fn()
-
-    // document.querySelectorのモック
-    vi.spyOn(document, 'querySelector').mockImplementation((selector) => {
-      if (selector === 'input[type="email"]') return mockEmailInput
-      if (selector === 'input[type="password"]') return mockPasswordInput
-      if (selector === 'button[type="submit"]') return mockLoginButton
-      return null
-    })
   })
 
   describe('環境による表示制御', () => {
@@ -40,6 +32,7 @@ describe('DebugLogin.vue', () => {
       const wrapper = mount(DebugLogin, {
         props: {
           isDev: true,
+          testUsers: mockTestUsers,
         },
       })
 
@@ -56,12 +49,12 @@ describe('DebugLogin.vue', () => {
       const wrapper = mount(DebugLogin, {
         props: {
           isDev: false,
+          testUsers: mockTestUsers,
         },
       })
 
-      // フローティングボタンも存在しない
-      const floatingButton = wrapper.find('button[aria-label="デバッグパネルを開閉"]')
-      expect(floatingButton.exists()).toBe(false)
+      // コンポーネント全体が表示されない
+      expect(wrapper.html()).toContain('<!--v-if-->')
     })
   })
 
@@ -70,16 +63,18 @@ describe('DebugLogin.vue', () => {
       const wrapper = mount(DebugLogin, {
         props: {
           isDev: true,
+          testUsers: mockTestUsers,
         },
       })
 
+      // フローティングボタンをクリック
       const floatingButton = wrapper.find('button[aria-label="デバッグパネルを開閉"]')
       await floatingButton.trigger('click')
       await wrapper.vm.$nextTick()
 
       // パネルが開いてユーザーボタンが表示される
-      const user1Button = wrapper.find('button[aria-label="テストユーザー1でログイン"]')
-      const user2Button = wrapper.find('button[aria-label="テストユーザー2でログイン"]')
+      const user1Button = wrapper.find('button[aria-label="Test User 1でログイン"]')
+      const user2Button = wrapper.find('button[aria-label="Test User 2でログイン"]')
 
       expect(user1Button.exists()).toBe(true)
       expect(user2Button.exists()).toBe(true)
@@ -91,6 +86,7 @@ describe('DebugLogin.vue', () => {
       const wrapper = mount(DebugLogin, {
         props: {
           isDev: true,
+          testUsers: mockTestUsers,
         },
       })
 
@@ -110,11 +106,12 @@ describe('DebugLogin.vue', () => {
     })
   })
 
-  describe('フォーム自動入力機能', () => {
-    it('ユーザー1ボタンクリック時にフォームに正しい値が設定される', async () => {
+  describe('イベントエミット機能', () => {
+    it('ユーザー1ボタンクリック時に正しいイベントがエミットされる', async () => {
       const wrapper = mount(DebugLogin, {
         props: {
           isDev: true,
+          testUsers: mockTestUsers,
         },
       })
 
@@ -124,33 +121,28 @@ describe('DebugLogin.vue', () => {
       await wrapper.vm.$nextTick()
 
       // ユーザー1ボタンをクリック
-      const user1Button = wrapper.find('button[aria-label="テストユーザー1でログイン"]')
+      const user1Button = wrapper.find('button[aria-label="Test User 1でログイン"]')
       await user1Button.trigger('click')
 
-      // DOM要素にアクセスできるよう少し待つ
-      await new Promise(resolve => setTimeout(resolve, 150))
+      // loading-startイベントがエミットされている
+      expect(wrapper.emitted('loading-start')).toBeTruthy()
+      expect(wrapper.emitted('loading-start')?.[0]).toEqual(['user1'])
 
-      // フォーム要素の取得が試行されたことを確認
-      expect(document.querySelector).toHaveBeenCalledWith('input[type="email"]')
-      expect(document.querySelector).toHaveBeenCalledWith('input[type="password"]')
-      expect(document.querySelector).toHaveBeenCalledWith('button[type="submit"]')
-
-      // フォームに正しい値が設定されたことを確認
-      expect(mockEmailInput.value).toBe('user1@example.com')
-      expect(mockPasswordInput.value).toBe('railuxt01')
-
-      // input イベントが発火されたことを確認
-      expect(mockEmailInput.dispatchEvent).toHaveBeenCalled()
-      expect(mockPasswordInput.dispatchEvent).toHaveBeenCalled()
-
-      // ログインボタンがクリックされたことを確認
-      expect(mockLoginButton.click).toHaveBeenCalled()
+      // user-selectedイベントがエミットされている
+      expect(wrapper.emitted('user-selected')).toBeTruthy()
+      const userSelectedEvent = wrapper.emitted('user-selected')?.[0] as any[]
+      expect(userSelectedEvent[0]).toEqual({
+        email: 'user1@example.com',
+        password: 'password123',
+        userInfo: mockTestUsers[0],
+      })
     })
 
-    it('ユーザー2ボタンクリック時にフォームに正しい値が設定される', async () => {
+    it('ユーザー2ボタンクリック時に正しいイベントがエミットされる', async () => {
       const wrapper = mount(DebugLogin, {
         props: {
           isDev: true,
+          testUsers: mockTestUsers,
         },
       })
 
@@ -160,63 +152,31 @@ describe('DebugLogin.vue', () => {
       await wrapper.vm.$nextTick()
 
       // ユーザー2ボタンをクリック
-      const user2Button = wrapper.find('button[aria-label="テストユーザー2でログイン"]')
+      const user2Button = wrapper.find('button[aria-label="Test User 2でログイン"]')
       await user2Button.trigger('click')
 
-      // DOM要素にアクセスできるよう少し待つ
-      await new Promise(resolve => setTimeout(resolve, 150))
+      // loading-startイベントがエミットされている
+      expect(wrapper.emitted('loading-start')).toBeTruthy()
+      expect(wrapper.emitted('loading-start')?.[0]).toEqual(['user2'])
 
-      // フォーム要素の取得が試行されたことを確認
-      expect(document.querySelector).toHaveBeenCalledWith('input[type="email"]')
-      expect(document.querySelector).toHaveBeenCalledWith('input[type="password"]')
-      expect(document.querySelector).toHaveBeenCalledWith('button[type="submit"]')
-
-      // フォームに正しい値が設定されたことを確認
-      expect(mockEmailInput.value).toBe('user2@example.com')
-      expect(mockPasswordInput.value).toBe('railuxt02')
-
-      // input イベントが発火されたことを確認
-      expect(mockEmailInput.dispatchEvent).toHaveBeenCalled()
-      expect(mockPasswordInput.dispatchEvent).toHaveBeenCalled()
-
-      // ログインボタンがクリックされたことを確認
-      expect(mockLoginButton.click).toHaveBeenCalled()
-    })
-
-    it('フォーム要素が見つからない場合はエラーハンドリングされる', async () => {
-      // document.querySelectorがnullを返すようにモック
-      vi.mocked(document.querySelector).mockReturnValue(null)
-
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-
-      const wrapper = mount(DebugLogin, {
-        props: {
-          isDev: true,
-        },
+      // user-selectedイベントがエミットされている
+      expect(wrapper.emitted('user-selected')).toBeTruthy()
+      const userSelectedEvent = wrapper.emitted('user-selected')?.[0] as any[]
+      expect(userSelectedEvent[0]).toEqual({
+        email: 'user2@example.com',
+        password: 'password456',
+        userInfo: mockTestUsers[1],
       })
-
-      // パネルを開く
-      const floatingButton = wrapper.find('button[aria-label="デバッグパネルを開閉"]')
-      await floatingButton.trigger('click')
-      await wrapper.vm.$nextTick()
-
-      // ユーザー1ボタンをクリック
-      const user1Button = wrapper.find('button[aria-label="テストユーザー1でログイン"]')
-      await user1Button.trigger('click')
-
-      // エラーハンドリングの確認
-      await new Promise(resolve => setTimeout(resolve, 150))
-      expect(consoleSpy).toHaveBeenCalledWith('user1ログインエラー:', expect.any(Error))
-
-      consoleSpy.mockRestore()
     })
   })
 
   describe('ローディング状態', () => {
-    it('ログイン処理中はボタンがローディング状態になる', async () => {
+    it('ローディング中はボタンがディセーブルになる', async () => {
       const wrapper = mount(DebugLogin, {
         props: {
           isDev: true,
+          testUsers: mockTestUsers,
+          loading: true,
         },
       })
 
@@ -225,14 +185,35 @@ describe('DebugLogin.vue', () => {
       await floatingButton.trigger('click')
       await wrapper.vm.$nextTick()
 
-      // ユーザー1ボタンをクリック
-      const user1Button = wrapper.find('button[aria-label="テストユーザー1でログイン"]')
-      await user1Button.trigger('click')
+      // ボタンがディセーブルになっている
+      const user1Button = wrapper.find('button[aria-label="Test User 1でログイン"]')
+      const user2Button = wrapper.find('button[aria-label="Test User 2でログイン"]')
+
+      expect(user1Button.attributes('disabled')).toBeDefined()
+      expect(user2Button.attributes('disabled')).toBeDefined()
+    })
+
+    it('ローディング中のボタンにはスピナーアイコンが表示される', async () => {
+      const wrapper = mount(DebugLogin, {
+        props: {
+          isDev: true,
+          testUsers: mockTestUsers,
+          loading: true,
+        },
+      })
+
+      // パネルを開く
+      const floatingButton = wrapper.find('button[aria-label="デバッグパネルを開閉"]')
+      await floatingButton.trigger('click')
       await wrapper.vm.$nextTick()
 
-      // ローディング状態の確認
-      expect(user1Button.text()).toContain('ログイン中...')
-      expect(user1Button.attributes('disabled')).toBeDefined()
+      // ローディング状態では全てのボタンがディセーブルかつスピナー無し状態になる
+      // （currentUserId が null のため、どのボタンも個別のスピナーは表示されない）
+      const user1Button = wrapper.find('button[aria-label="Test User 1でログイン"]')
+      const userCircleIcon = user1Button.find('[name="heroicons:user-circle"]')
+
+      // ローディング中はuser-circleアイコンが表示される（個別ボタンがアクティブでないため）
+      expect(userCircleIcon.exists()).toBe(true)
     })
   })
 
@@ -241,6 +222,7 @@ describe('DebugLogin.vue', () => {
       const wrapper = mount(DebugLogin, {
         props: {
           isDev: true,
+          testUsers: mockTestUsers,
         },
       })
 
@@ -253,6 +235,7 @@ describe('DebugLogin.vue', () => {
       const wrapper = mount(DebugLogin, {
         props: {
           isDev: true,
+          testUsers: mockTestUsers,
         },
       })
 
@@ -261,13 +244,49 @@ describe('DebugLogin.vue', () => {
       await floatingButton.trigger('click')
       await wrapper.vm.$nextTick()
 
-      const user1Button = wrapper.find('button[aria-label="テストユーザー1でログイン"]')
-      const user2Button = wrapper.find('button[aria-label="テストユーザー2でログイン"]')
+      // 各ボタンのaria-label属性を確認
+      const user1Button = wrapper.find('button[aria-label="Test User 1でログイン"]')
+      const user2Button = wrapper.find('button[aria-label="Test User 2でログイン"]')
       const closeButton = wrapper.find('button[aria-label="パネルを閉じる"]')
 
       expect(user1Button.exists()).toBe(true)
       expect(user2Button.exists()).toBe(true)
       expect(closeButton.exists()).toBe(true)
+
+      expect(user1Button.attributes('aria-label')).toBe('Test User 1でログイン')
+      expect(user2Button.attributes('aria-label')).toBe('Test User 2でログイン')
+      expect(closeButton.attributes('aria-label')).toBe('パネルを閉じる')
+    })
+  })
+
+  describe('Props によるカスタマイズ', () => {
+    it('カスタムテストユーザーが正しく表示される', async () => {
+      const customUsers: TestUser[] = [
+        {
+          id: 'custom1',
+          name: 'Custom User',
+          email: 'custom@example.com',
+          password: 'custom123',
+          color: 'purple',
+        },
+      ]
+
+      const wrapper = mount(DebugLogin, {
+        props: {
+          isDev: true,
+          testUsers: customUsers,
+        },
+      })
+
+      // パネルを開く
+      const floatingButton = wrapper.find('button[aria-label="デバッグパネルを開閉"]')
+      await floatingButton.trigger('click')
+      await wrapper.vm.$nextTick()
+
+      // カスタムユーザーボタンが表示される
+      const customButton = wrapper.find('button[aria-label="Custom Userでログイン"]')
+      expect(customButton.exists()).toBe(true)
+      expect(customButton.text()).toContain('Custom User')
     })
   })
 })

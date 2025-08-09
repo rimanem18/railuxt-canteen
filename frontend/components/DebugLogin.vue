@@ -1,7 +1,13 @@
 /**
- * デバッグ用ワンクリックログインコンポーネント
+ * デバッグ用ワンクリックログインコンポーネント（SOLID原則準拠版）
  * 開発環境でのみ表示され、Apple HIG準拠の洗練されたUIでテストユーザーでの簡単ログインを提供
  * フローティングデザインでメインコンテンツを邪魔せず、必要時のみ展開表示
+ *
+ * SOLID原則の適用:
+ * - 単一責任: UI表示とユーザー操作イベントの処理のみ
+ * - 開放閉鎖: testUsersプロパティで拡張可能
+ * - 依存性逆転: DOM操作は親コンポーネントに委譲
+ *
  * @component DebugLogin
  */
 <template>
@@ -46,15 +52,18 @@
         <div class="p-4">
           <!-- テストユーザーボタングリッド -->
           <div class="space-y-3">
-            <!-- テストユーザー1ログインボタン -->
+            <!-- 各テストユーザーのログインボタンを動的生成 -->
             <button
+              v-for="testUser in testUsers"
+              :key="testUser.id"
               :disabled="isLoading"
-              aria-label="テストユーザー1でログイン"
-              class="flex w-full items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-all duration-200 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
-              @click="handleUser1Login"
+              :aria-label="`${testUser.name}でログイン`"
+              class="flex w-full items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+              :class="getButtonClasses(testUser.color)"
+              @click="handleUserLogin(testUser)"
             >
               <Icon
-                v-if="!isLoading || currentUser !== 'user1'"
+                v-if="!isLoading || currentUserId !== testUser.id"
                 name="heroicons:user-circle"
                 class="h-4 w-4"
               />
@@ -63,27 +72,7 @@
                 name="heroicons:arrow-path"
                 class="h-4 w-4 animate-spin"
               />
-              <span>{{ isLoading && currentUser === 'user1' ? 'ログイン中...' : 'Test User 1' }}</span>
-            </button>
-
-            <!-- テストユーザー2ログインボタン -->
-            <button
-              :disabled="isLoading"
-              aria-label="テストユーザー2でログイン"
-              class="flex w-full items-center justify-center gap-2 rounded-md bg-teal-600 px-4 py-2.5 text-sm font-medium text-white transition-all duration-200 hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
-              @click="handleUser2Login"
-            >
-              <Icon
-                v-if="!isLoading || currentUser !== 'user2'"
-                name="heroicons:user-circle"
-                class="h-4 w-4"
-              />
-              <Icon
-                v-else
-                name="heroicons:arrow-path"
-                class="h-4 w-4 animate-spin"
-              />
-              <span>{{ isLoading && currentUser === 'user2' ? 'ログイン中...' : 'Test User 2' }}</span>
+              <span>{{ isLoading && currentUserId === testUser.id ? 'ログイン中...' : testUser.name }}</span>
             </button>
           </div>
 
@@ -131,6 +120,8 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import type { TestUser } from '~/config/debug-users'
+import { debugUsers, colorClasses } from '~/config/debug-users'
 
 /**
  * プロップスの型定義
@@ -138,16 +129,39 @@ import { ref, computed } from 'vue'
 interface Props {
   /** 開発環境フラグ。trueの場合のみコンポーネントを表示 */
   isDev: boolean
+  /** テストユーザーリスト（デフォルト値として設定ファイルから取得） */
+  testUsers?: TestUser[]
+  /** 外部からのローディング状態制御 */
+  loading?: boolean
 }
 
-const props = defineProps<Props>()
+/**
+ * イベントの型定義
+ */
+interface Emits {
+  /** ユーザー選択時に親コンポーネントに通知 */
+  (e: 'user-selected', credentials: { email: string, password: string, userInfo: TestUser }): void
+  /** ローディング開始を親に通知 */
+  (e: 'loading-start', userId: string): void
+  /** ローディング終了を親に通知 */
+  (e: 'loading-end'): void
+}
 
-// コンポーネントの状態管理
+const props = withDefaults(defineProps<Props>(), {
+  testUsers: () => debugUsers,
+  loading: false,
+})
+
+const emit = defineEmits<Emits>()
+
+// コンポーネントの状態管理（UI表示のみに責任を限定）
 const isOpen = ref<boolean>(false)
-const isLoading = ref<boolean>(false)
-const currentUser = ref<'user1' | 'user2' | null>(null)
+const currentUserId = ref<string | null>(null)
 const loginMessage = ref<string>('')
 const isSuccess = ref<boolean>(false)
+
+// 外部制御可能なローディング状態
+const isLoading = computed(() => props.loading)
 
 // フィードバックメッセージのスタイルを動的に設定
 const feedbackStyle = computed(() => {
@@ -158,6 +172,16 @@ const feedbackStyle = computed(() => {
     return 'bg-red-900/50 text-red-300 border border-red-700/50'
   }
 })
+
+/**
+ * ボタンの色テーマに応じたTailwind CSSクラスを取得
+ * @param {TestUser['color']} color - 色テーマ
+ * @returns {string} 適用するクラス文字列
+ */
+function getButtonClasses(color: TestUser['color']): string {
+  const colorClass = colorClasses[color]
+  return `${colorClass.bg} ${colorClass.hover} ${colorClass.focus}`
+}
 
 /**
  * デバッグパネルの開閉状態をトグル
@@ -176,12 +200,16 @@ function closePanel(): void {
 /**
  * ログインフィードバックメッセージを設定
  * @param {boolean} success - ログイン成功フラグ
- * @param {string} userType - ログインしたユーザータイプ
+ * @param {string} userName - ログインしたユーザー名
  */
-function setLoginMessage(success: boolean, userType: string): void {
+function setLoginMessage(success: boolean, userName?: string): void {
   isSuccess.value = success
-  if (success) {
-    loginMessage.value = `${userType}でログインしました`
+  if (success && userName) {
+    loginMessage.value = `${userName}でログインしました`
+    // 成功時はパネルを自動で閉じる
+    setTimeout(() => {
+      closePanel()
+    }, 1500)
   }
   else {
     loginMessage.value = 'ログインに失敗しました'
@@ -194,72 +222,30 @@ function setLoginMessage(success: boolean, userType: string): void {
 }
 
 /**
- * ログイン画面のフォームに自動入力してログインボタンを押す処理
- * @param {string} email - メールアドレス
- * @param {string} password - パスワード
- * @param {'user1' | 'user2'} userType - ユーザータイプ
+ * テストユーザーでのログイン処理を実行
+ * DOM操作は行わず、親コンポーネントにイベントを通知するのみ
+ * @param {TestUser} testUser - 選択されたテストユーザー
  */
-async function fillFormAndSubmit(email: string, password: string, userType: 'user1' | 'user2'): Promise<void> {
-  // ローディング状態を開始
-  isLoading.value = true
-  currentUser.value = userType
+function handleUserLogin(testUser: TestUser): void {
+  // ローディング開始を親に通知
+  currentUserId.value = testUser.id
+  emit('loading-start', testUser.id)
 
-  try {
-    // フォーム要素を取得
-    const emailInput = document.querySelector('input[type="email"]') as HTMLInputElement
-    const passwordInput = document.querySelector('input[type="password"]') as HTMLInputElement
-    const loginButton = document.querySelector('button[type="submit"]') as HTMLButtonElement
+  // 親コンポーネントにユーザー選択を通知
+  // 実際のログイン処理は親コンポーネントが担当
+  emit('user-selected', {
+    email: testUser.email,
+    password: testUser.password,
+    userInfo: testUser,
+  })
 
-    if (!emailInput || !passwordInput || !loginButton) {
-      throw new Error('ログインフォームの要素が見つかりません')
-    }
-
-    // フォームに値を設定
-    emailInput.value = email
-    passwordInput.value = password
-
-    // Vue の reactivity を更新するためにイベントを発火
-    emailInput.dispatchEvent(new Event('input', { bubbles: true }))
-    passwordInput.dispatchEvent(new Event('input', { bubbles: true }))
-
-    // 少し待ってからログインボタンをクリック
-    setTimeout(() => {
-      loginButton.click()
-      // ログイン処理完了後のフィードバック表示
-      setLoginMessage(true, userType === 'user1' ? 'ユーザー1' : 'ユーザー2')
-
-      // 成功時はパネルを自動で閉じる
-      setTimeout(() => {
-        closePanel()
-      }, 1500)
-
-      // ローディング状態を終了
-      isLoading.value = false
-      currentUser.value = null
-    }, 100)
-  }
-  catch (error) {
-    console.error(`${userType}ログインエラー:`, error)
-    setLoginMessage(false, '')
-    // ローディング状態を終了
-    isLoading.value = false
-    currentUser.value = null
-  }
+  // フィードバック表示（成功前提、実際の結果は親から制御される）
+  setLoginMessage(true, testUser.name)
 }
 
-/**
- * テストユーザー1でログイン実行
- * メール: user1@example.com, パスワード: railuxt01（seeds.rbと同sync）
- */
-async function handleUser1Login(): Promise<void> {
-  await fillFormAndSubmit('user1@example.com', 'railuxt01', 'user1')
-}
-
-/**
- * テストユーザー2でログイン実行
- * メール: user2@example.com, パスワード: railuxt02（seeds.rbと同期）
- */
-async function handleUser2Login(): Promise<void> {
-  await fillFormAndSubmit('user2@example.com', 'railuxt02', 'user2')
-}
+// 外部からのメッセージ制御のための関数を公開
+defineExpose({
+  setLoginMessage,
+  closePanel,
+})
 </script>

@@ -25,7 +25,7 @@ interface OrderHistoryResponse {
  */
 export const useOrderHistory = (filters: Ref<OrderFilters> = ref({})) => {
   const base = useRuntimeConfig().public.apiBase
-  const { accessToken, client, uid } = useAuth()
+  const { accessToken, client, uid } = useAuthTokens()
 
   /**
    * 注文履歴を取得する関数

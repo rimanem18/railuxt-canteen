@@ -27,11 +27,22 @@ interface FetchOptions {
   }) => void
 }
 
+// 分離されたコンポーザブルをモック
+vi.mock('~/composables/useAuthTokens', () => ({
+  useAuthTokens: vi.fn(),
+}))
+
+vi.mock('~/composables/useAuthApi', () => ({
+  useAuthApi: vi.fn(),
+}))
+
 describe('useAuth', () => {
   let mockUser: Ref<User | null>
   let mockAccessToken: Ref<string | null>
   let mockClient: Ref<string | null>
   let mockUid: Ref<string | null>
+  let mockAuthTokens: any
+  let mockAuthApi: any
 
   beforeEach(() => {
     // 各テストの前にモックをリセット
@@ -42,6 +53,40 @@ describe('useAuth', () => {
     mockAccessToken = { value: null } as Ref<string | null>
     mockClient = { value: null } as Ref<string | null>
     mockUid = { value: null } as Ref<string | null>
+
+    // useAuthTokensのモック
+    mockAuthTokens = {
+      accessToken: { value: mockAccessToken.value },
+      client: { value: mockClient.value },
+      uid: { value: mockUid.value },
+      hasValidTokens: vi.fn(() => !!mockAccessToken.value && !!mockClient.value && !!mockUid.value),
+      clearTokens: vi.fn(() => {
+        mockAccessToken.value = null
+        mockClient.value = null
+        mockUid.value = null
+      }),
+      saveTokensFromHeaders: vi.fn((headers: Headers) => {
+        mockAccessToken.value = headers.get('access-token') || null
+        mockClient.value = headers.get('client') || null
+        mockUid.value = headers.get('uid') || null
+      }),
+      getAuthHeaders: vi.fn(() => ({
+        'access-token': mockAccessToken.value || '',
+        'client': mockClient.value || '',
+        'uid': mockUid.value || '',
+      })),
+    }
+
+    // useAuthApiのモック
+    mockAuthApi = {
+      login: vi.fn(),
+      logout: vi.fn(),
+      validateToken: vi.fn(),
+    }
+
+    // モック関数の設定
+    vi.mocked((globalThis as any).useAuthTokens).mockReturnValue(mockAuthTokens)
+    vi.mocked((globalThis as any).useAuthApi).mockReturnValue(mockAuthApi)
 
     // globalに設定されたモック関数を使用
     vi.mocked((globalThis as any).useState).mockReturnValue(mockUser)
@@ -79,40 +124,21 @@ describe('useAuth', () => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
-      const mockHeaders = new Headers()
-      mockHeaders.set('access-token', 'test-token')
-      mockHeaders.set('client', 'test-client')
-      mockHeaders.set('uid', 'test-uid')
 
-      vi.mocked((globalThis as any).$fetch).mockImplementation(
-        (url: any, options?: any) => {
-          // onResponseコールバックを実行
-          if (options?.onResponse) {
-            options.onResponse({ response: { headers: mockHeaders } })
-          }
-          return Promise.resolve({ data: mockUserData })
-        },
-      )
+      // useAuthApiのモックを設定（成功ケース）
+      mockAuthApi.login.mockResolvedValue({
+        success: true,
+        data: mockUserData,
+      })
 
       const { login, user } = useAuth()
       const result = await login('test@example.com', 'password123')
 
-      // APIが正しく呼び出されたかチェック
-      expect(globalThis.$fetch).toHaveBeenCalledWith('/api/v1/auth/sign_in', {
-        method: 'POST',
-        baseURL: 'http://localhost:3000',
-        headers: { 'Content-Type': 'application/json' },
-        body: { email: 'test@example.com', password: 'password123' },
-        onResponse: expect.any(Function),
-        onResponseError: expect.any(Function),
-      })
+      // useAuthApiのlogin関数が正しく呼び出されたかチェック
+      expect(mockAuthApi.login).toHaveBeenCalledWith('test@example.com', 'password123', {})
 
       // ユーザー情報が正しく設定されたかチェック
       expect(user.value).toEqual(mockUserData)
-      // 認証トークンが保存されたかチェック
-      expect(mockAccessToken.value).toBe('test-token')
-      expect(mockClient.value).toBe('test-client')
-      expect(mockUid.value).toBe('test-uid')
       // 戻り値がtrueであることをチェック
       expect(result).toBe(true)
     })
@@ -125,7 +151,7 @@ describe('useAuth', () => {
 
       vi.mocked((globalThis as any).$fetch).mockRejectedValue(mockError)
 
-      const { login, errorMsg } = useAuth()
+      const { login, error: errorMsg } = useAuth()
       const result = await login('test@example.com', 'wrong-password')
 
       // エラーメッセージが正しく設定されたかチェック
@@ -431,7 +457,7 @@ describe('useAuth', () => {
 
       vi.mocked((globalThis as any).$fetch).mockRejectedValue(mockError)
 
-      const { debugLogin, errorMsg } = useAuth()
+      const { debugLogin, error: errorMsg } = useAuth()
       const result = await debugLogin('debug@example.com', 'wrong-password')
 
       // デバッグログが出力されたかチェック
@@ -507,8 +533,8 @@ describe('useAuth', () => {
     })
   })
 
-  describe('clearAuth', () => {
-    it('全ての認証情報をクリアする', () => {
+  describe('logout', () => {
+    it('ログアウト時に認証情報を全てクリアする', async () => {
       // 初期状態として認証情報を設定
       mockUser.value = {
         id: 1,
@@ -525,14 +551,17 @@ describe('useAuth', () => {
       mockClient.value = 'test-client'
       mockUid.value = 'test-uid'
 
-      const { clearAuth } = useAuth()
-      clearAuth()
+      // ログアウトAPIのモック（成功時）
+      vi.mocked((globalThis as any).$fetch).mockResolvedValue({})
+
+      const { logout, user } = useAuth()
+      await logout()
 
       // 全ての認証情報がクリアされたかチェック
       expect(mockAccessToken.value).toBe(null)
       expect(mockClient.value).toBe(null)
       expect(mockUid.value).toBe(null)
-      expect(mockUser.value).toBe(null)
+      expect(user.value).toBe(null)
     })
   })
 })

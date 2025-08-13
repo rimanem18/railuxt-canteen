@@ -13,8 +13,9 @@ export const useApi = <T = unknown>(
   const base = useRuntimeConfig().public.apiBase
   const url = `${base}${path}`
 
-  // useAuthから認証関連の機能を取得
-  const { accessToken, client, uid, updateAuthHeaders, clearAuth } = useAuth()
+  // useAuthTokensから認証関連の機能を取得
+  const { accessToken, client, uid, saveTokensFromHeaders } = useAuthTokens()
+  const auth = useAuth()
 
   // useFetchに適合する型に変換し、トークンローテーション対応を実装
   const { data, error, refresh, pending } = useFetch<T>(url, {
@@ -46,14 +47,15 @@ export const useApi = <T = unknown>(
       // DeviseTokenAuthのトークンローテーション対応
       // 成功時のレスポンスヘッダーから新しい認証トークンを取得・更新
       if (response.headers.has('access-token')) {
-        updateAuthHeaders(response.headers)
+        saveTokensFromHeaders(response.headers)
       }
     },
     onResponseError({ response }) {
       // 401 Unauthorizedの場合は認証が無効になったと判断
       // 認証情報をクリアしてログイン画面への遷移を促す
       if (response.status === 401) {
-        clearAuth()
+        // useAuthのlogout関数を使用して認証情報をクリア
+        auth.logout()
         // クライアントサイドでのみリダイレクト実行
         if (import.meta.client) {
           navigateTo('/login')

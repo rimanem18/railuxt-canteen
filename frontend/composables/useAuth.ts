@@ -1,254 +1,169 @@
-import { ref, computed } from 'vue'
-import type { User, AuthResponse, AuthValidateResponse } from '~/types/schemas'
+/**
+ * メイン認証コンポーザブル
+ *
+ * 単一責任：認証状態の管理と統合インターフェースの提供
+ * - ユーザー情報の状態管理（useState）
+ * - ログイン状態の計算プロパティ
+ * - 分離されたモジュールの統合
+ * - UIコンポーネント向けのシンプルなAPI提供
+ */
+
+import type { User, AuthState, LoginOptions } from '~/types/auth'
 
 /**
- * 認証機能を提供するコンポーザブル関数
- * @returns {object} 認証状態とログイン・ログアウト関数
+ * 認証機能を提供するメインコンポーザブル関数
+ * @returns 認証状態とログイン・ログアウト関数
  */
 export const useAuth = () => {
+  // 分離されたモジュールを統合
+  const { hasValidTokens, clearTokens } = useAuthTokens()
+  const { login: apiLogin, logout: apiLogout, validateToken } = useAuthApi()
+
   // ユーザー情報をuseStateで管理（アプリ全体で共有）
   // リロードしても状態が保持される
-  const user = useState('user', () => null as User | null)
-  const errorMsg = ref<string | null>(null)
+  const user = useState<User | null>('user', () => null)
 
-  // ログイン状態の判定
+  // エラー情報
+  const error = ref<string | null>(null)
+
+  // ログイン状態の判定（計算プロパティ）
   const isLoggedIn = computed(() => !!user.value)
 
-  // DeviseTokenAuthで必要な認証トークンを管理するためのCookie
-  const accessToken = useCookie('access-token')
-  const client = useCookie('client')
-  const uid = useCookie('uid')
-
   /**
-   * レスポンスヘッダーから認証トークンを取得してCookieに保存
-   * @param {Headers} headers - レスポンスヘッダー
+   * 認証状態を取得
+   * @returns 現在の認証状態
    */
-  function saveHeaders(headers: Headers) {
-    const access = headers.get('access-token')
-    const clientValue = headers.get('client')
-    const uidValue = headers.get('uid')
-
-    if (access) accessToken.value = access
-    if (clientValue) client.value = clientValue
-    if (uidValue) uid.value = uidValue
-  }
-
-  /**
-   * API呼び出し用の認証ヘッダーを取得
-   * @returns {Record<string, string>} 認証ヘッダー
-   */
-  function getHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {}
-    if (accessToken.value) headers['access-token'] = accessToken.value
-    if (client.value) headers['client'] = client.value
-    if (uid.value) headers['uid'] = uid.value
-    return headers
-  }
-
-  /**
-   * 保存されたトークンを使用してユーザー情報を取得
-   * @returns {Promise<void>} 取得処理の完了を待つPromise
-   */
-  async function fetchUser() {
-    // 必要なトークンが全て揃っていない場合は処理をスキップ
-    if (!accessToken.value || !client.value || !uid.value) {
-      return
-    }
-
-    try {
-      const config = useRuntimeConfig()
-      const baseUrl = config.public.apiBase || ''
-      const response = await $fetch<AuthValidateResponse>(
-        '/api/v1/auth/validate_token',
-        {
-          method: 'GET',
-          baseURL: baseUrl,
-          headers: {
-            'Content-Type': 'application/json',
-            ...getHeaders(),
-          },
-          onResponse({ response }) {
-            // トークンの更新
-            saveHeaders(response.headers)
-          },
-        },
-      )
-
-      // ユーザー情報の取得
-      user.value = response.data
-    }
-    catch (error) {
-      console.error('認証エラー:', error)
-      clearAuth()
-    }
-  }
-
-  /**
-   * 認証情報を全てクリア
-   */
-  function clearAuth() {
-    accessToken.value = null
-    client.value = null
-    uid.value = null
-    user.value = null
-  }
+  const getAuthState = (): AuthState => ({
+    user: user.value,
+    isLoggedIn: isLoggedIn.value,
+    error: error.value,
+  })
 
   /**
    * メールアドレスとパスワードでログイン
-   * @param {string} email - メールアドレス
-   * @param {string} password - パスワード
-   * @returns {Promise<boolean>} ログイン成功時true、失敗時false
+   * @param email - メールアドレス
+   * @param password - パスワード
+   * @param options - ログインオプション
+   * @returns ログイン成功時true、失敗時false
    */
-  /**
-   * 実際のログイン処理を実行（プライベート関数）
-   * @param {string} email - ログイン用メールアドレス
-   * @param {string} password - ログイン用パスワード
-   * @param {object} options - オプション設定
-   * @param {boolean} options.debug - デバッグモード有効フラグ
-   * @returns {Promise<boolean>} ログイン成功時true、失敗時false
-   */
-  async function executeLogin(email: string, password: string, options?: { debug?: boolean }): Promise<boolean> {
-    const isDebugMode = options?.debug || false
+  const login = async (
+    email: string,
+    password: string,
+    options: LoginOptions = {},
+  ): Promise<boolean> => {
+    // エラーを初期化
+    error.value = null
 
-    // デバッグログ: ログイン試行開始（デバッグモード時のみ）
-    if (isDebugMode) {
-      console.log('[DEBUG LOGIN] Attempting login with:', {
-        email,
-        password: '***', // パスワードはセキュリティ上マスク
-      })
-    }
-
-    errorMsg.value = null
     try {
-      const config = useRuntimeConfig()
-      const baseUrl = config.public.apiBase || ''
-      const response = await $fetch<AuthResponse>('/api/v1/auth/sign_in', {
-        method: 'POST',
-        baseURL: baseUrl,
-        headers: { 'Content-Type': 'application/json' },
-        body: { email, password },
-        onResponse({ response }) {
-          // デバッグログ: レスポンスヘッダー情報（デバッグモード時のみ）
-          if (isDebugMode) {
-            console.log('[DEBUG LOGIN] API Response headers:', response.headers)
-          }
-          // トークンを保存
-          saveHeaders(response.headers)
-        },
-        onResponseError({ response }) {
-          // デバッグ用ログ出力
-          console.error(
-            'Login error response:',
-            response.status,
-            response.statusText,
-          )
-          console.error('Response body:', response._data)
-        },
-      })
+      const result = await apiLogin(email, password, options)
 
-      // ユーザー情報を取得
-      user.value = response.data
-
-      // デバッグログ: ログイン成功（デバッグモード時のみ）
-      if (isDebugMode) {
-        console.log('[DEBUG LOGIN] Login successful for user:', response.data)
-      }
-
-      return true
-    }
-    catch (e: unknown) {
-      // デバッグログ: エラー詳細（デバッグモード時のみ）
-      if (isDebugMode) {
-        console.error('[DEBUG LOGIN] Login failed with error:', e)
-      }
-
-      // 既存のエラーハンドリングロジックを維持
-      console.error('Login error:', e)
-      // エラーメッセージの優先順位：API側のエラー配列 > 通常のエラーメッセージ > デフォルトメッセージ
-      if (e && typeof e === 'object' && 'data' in e) {
-        const errorData = e.data as any
-        errorMsg.value = errorData?.errors?.join(', ') || 'ログイン失敗'
-      }
-      else if (e && typeof e === 'object' && 'message' in e) {
-        errorMsg.value = (e as { message: string }).message
+      if (result.success && result.data) {
+        // ユーザー情報を状態に保存
+        user.value = result.data
+        return true
       }
       else {
-        errorMsg.value = 'ログイン失敗'
+        // ログイン失敗時の処理
+        error.value = result.error?.message || 'ログイン失敗'
+        clearAuth()
+        return false
       }
+    }
+    catch (unexpectedError) {
+      // 予期しないエラーの処理
+      console.error('予期しないログインエラー:', unexpectedError)
+      error.value = 'ログイン処理中に予期しないエラーが発生しました'
       clearAuth()
       return false
     }
   }
 
-  async function login(email: string, password: string): Promise<boolean> {
-    return executeLogin(email, password)
-  }
-
   /**
-   * デバッグログイン機能（開発・検証用）
-   * 既存のlogin関数と同じ認証フローを使用し、デバッグ用のログ出力を追加
-   * @param {string} email - メールアドレス
-   * @param {string} password - パスワード
-   * @returns {Promise<boolean>} ログイン成功時true、失敗時false
+   * デバッグ用ログイン（開発・検証用）
+   * @param email - メールアドレス
+   * @param password - パスワード
+   * @returns ログイン成功時true、失敗時false
    */
-  async function debugLogin(email: string, password: string): Promise<boolean> {
-    return executeLogin(email, password, { debug: true })
+  const debugLogin = async (email: string, password: string): Promise<boolean> => {
+    return login(email, password, { debug: true })
   }
 
   /**
    * ログアウト処理
-   * @returns {Promise<void>} ログアウト処理の完了を待つPromise
+   * @returns ログアウト処理の完了を待つPromise
    */
-  async function logout() {
+  const logout = async (): Promise<void> => {
     try {
-      const config = useRuntimeConfig()
-      const baseUrl = config.public.apiBase || ''
-      await $fetch('/api/v1/auth/sign_out', {
-        method: 'DELETE',
-        baseURL: baseUrl,
-        headers: getHeaders(),
-      })
+      // API側のログアウト処理（失敗しても続行）
+      await apiLogout()
     }
     finally {
-      // API呼び出しの成功・失敗に関わらず認証情報をクリア
+      // 成功・失敗に関わらずクライアント側の認証情報をクリア
       clearAuth()
     }
   }
 
   /**
-   * レスポンスヘッダーから認証トークンを更新（DeviseTokenAuthのトークンローテーション対応）
-   * @param {Headers} headers - レスポンスヘッダー
+   * 保存されたトークンを使用してユーザー情報を取得
+   * @returns 取得処理の完了を待つPromise
    */
-  function updateAuthHeaders(headers: Headers) {
-    const newAccessToken = headers.get('access-token')
-    const newClient = headers.get('client')
-    const newUid = headers.get('uid')
+  const fetchUser = async (): Promise<void> => {
+    // 必要なトークンが全て揃っていない場合は処理をスキップ
+    if (!hasValidTokens()) {
+      return
+    }
 
-    // DeviseTokenAuthは成功時に新しいaccess-tokenを返すため、空文字でない場合のみ更新
-    if (newAccessToken && newAccessToken !== '') {
-      accessToken.value = newAccessToken
+    try {
+      const result = await validateToken()
+
+      if (result.success && result.data) {
+        // ユーザー情報を状態に保存
+        user.value = result.data
+      }
+      else {
+        // トークンが無効な場合は認証情報をクリア
+        console.warn('トークン検証失敗:', result.error?.message)
+        clearAuth()
+      }
     }
-    if (newClient && newClient !== '') {
-      client.value = newClient
-    }
-    if (newUid && newUid !== '') {
-      uid.value = newUid
+    catch (unexpectedError) {
+      // 予期しないエラーの処理
+      console.error('予期しないトークン検証エラー:', unexpectedError)
+      clearAuth()
     }
   }
 
+  /**
+   * 認証情報を全てクリア（内部関数）
+   */
+  const clearAuth = (): void => {
+    clearTokens()
+    user.value = null
+    error.value = null
+  }
+
+  /**
+   * エラー状態をクリア
+   */
+  const clearError = (): void => {
+    error.value = null
+  }
+
+  // 公開インターフェース（必要最小限に絞る）
   return {
-    user,
+    // 読み取り専用状態
+    user: readonly(user),
     isLoggedIn,
-    errorMsg,
-    accessToken,
-    client,
-    uid,
+    error: readonly(error),
+
+    // アクションメソッド
     login,
     debugLogin,
     logout,
     fetchUser,
-    saveHeaders,
-    updateAuthHeaders,
-    clearAuth,
+
+    // ユーティリティ
+    getAuthState,
+    clearError,
   }
 }

@@ -64,7 +64,7 @@ const password = ref('')
 const debugLoginLoading = ref(false)
 const debugLoginRef = ref<InstanceType<typeof DebugLogin> | null>(null)
 
-const { login, errorMsg } = useAuth()
+const { login, error: errorMsg } = useAuth()
 const { fillLoginForm } = useDebugLogin()
 const router = useRouter()
 

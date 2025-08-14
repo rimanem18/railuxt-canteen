@@ -1,42 +1,75 @@
 <template>
-  <div class="max-w-xs mx-auto mt-16">
-    <form
-      data-testid="login-form"
-      class="p-4 border rounded-lg"
-      @submit.prevent="onLogin"
+  <div class="max-w-xs mx-auto mt-16 relative">
+    <Transition
+      name="fade"
+      mode="out-in"
+      appear
     >
-      <h2 class="text-xl mb-4">
-        ログイン
-      </h2>
-      <input
-        v-model="email"
-        data-testid="email-input"
-        placeholder="メールアドレス"
-        type="email"
-        class="mb-2 p-2 border w-full"
+      <form
+        v-if="!isRedirecting"
+        data-testid="login-form"
+        class="p-4 border rounded-lg transition-all duration-300 ease-in-out"
+        @submit.prevent="onLogin"
       >
-      <input
-        v-model="password"
-        data-testid="password-input"
-        placeholder="パスワード"
-        type="password"
-        class="mb-2 p-2 border w-full"
-      >
-      <button
-        type="submit"
-        data-testid="login-button"
-        class="px-4 py-2 bg-blue-600 text-white rounded w-full"
-      >
-        ログイン
-      </button>
-      <p
-        v-if="errorMsg"
-        data-testid="error-message"
-        class="text-red-500 mt-2"
-      >
-        {{ errorMsg }}
-      </p>
-    </form>
+        <h2 class="text-xl mb-4">
+          ログイン
+        </h2>
+        <input
+          v-model="email"
+          data-testid="email-input"
+          placeholder="メールアドレス"
+          type="email"
+          class="mb-2 p-2 border w-full"
+        >
+        <input
+          v-model="password"
+          data-testid="password-input"
+          placeholder="パスワード"
+          type="password"
+          class="mb-2 p-2 border w-full"
+        >
+        <button
+          type="submit"
+          data-testid="login-button"
+          class="px-4 py-2 bg-blue-600 text-white rounded w-full relative"
+          :disabled="isRedirecting"
+        >
+          <span v-if="!isRedirecting">ログイン</span>
+          <span
+            v-else
+            class="absolute inset-0 flex items-center justify-center"
+          >
+            <svg
+              class="animate-spin h-5 w-5 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              />
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+          </span>
+        </button>
+        <p
+          v-if="errorMsg"
+          data-testid="error-message"
+          class="text-red-500 mt-2"
+        >
+          {{ errorMsg }}
+        </p>
+      </form>
+    </Transition>
 
     <!-- DebugLoginコンポーネント（フローティングデザインのため独立表示） -->
     <DebugLogin
@@ -59,10 +92,15 @@ import { useDebugLogin } from '~/composables/useDebugLogin'
 import DebugLogin from '~/components/DebugLogin.vue'
 import type { TestUser } from '~/config/debug-users'
 
+definePageMeta({
+  middleware: ['guest'],
+})
+
 const email = ref('')
 const password = ref('')
 const debugLoginLoading = ref(false)
 const debugLoginRef = ref<InstanceType<typeof DebugLogin> | null>(null)
+const isRedirecting = ref(false)
 
 const { login, error: errorMsg } = useAuth()
 const { fillLoginForm } = useDebugLogin()
@@ -79,7 +117,10 @@ const isDev = $config.public.isDev as boolean
 async function onLogin() {
   const ok = await login(email.value, password.value)
   // ログイン成功時のみトップページへ遷移（エラー時はerrorMsgで表示）
-  if (ok) router.push('/')
+  if (ok) {
+    isRedirecting.value = true
+    await router.push('/')
+  }
 }
 
 /**
